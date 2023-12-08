@@ -1,14 +1,24 @@
 # 可组合的API开发模式
 
-Roadmap:
-- 创建简单列表
-- 创建两层的嵌套列表
-- 创建三层的嵌套列表
-- 可复用的dataloader
-- 支持参数设置
-- 额外的过滤逻辑
-- 后处理功能
-- 可组合的service规范
+在构建关系型数据的API时, 怎么寻找一个兼顾灵活, 性能, 可维护的方案?  我希望它能够:
+- 支持异步
+- 支持定义多层的数据结构, 定义方式要简洁, 扩展要友好, 支持列表
+- 可以传入参数
+- 利用Dataloader 避免 N+1 查询
+- 避免GraphQL一套接口提供所有服务的模式, 每个API 接口都有能力快速定义自己所需的类型.
+- 提供 **每层对象** 在`resolve` 完子孙数据后, 做额外计算的能力
+- 挑选需要的返回字段 (类似GraphQL 编辑 query)
+
+这个repo 会通过一系列的例子, 结合 `pydantic2-resolve`, 来定义这样一套灵活的面向组合的开发模式.
+
+## Roadmap:
+- ~~简单列表~~
+- ~~嵌套列表~~
+- 多层嵌套列表
+- Dataloader 的复用
+- Resolver 参数
+- 后处理
+- 面向可组合模式的一些约定
 
 ## Mini-JIRA
 让我们从一个 mini-jira 系统开始.
@@ -73,10 +83,21 @@ class Sample1TaskDetail(ts.Task):
 几个注意点:
 
 1. 继承`ts.Task`后, `Sample1TaskDetail` 就可以用 `tq.get_tasks(session)` 返回的 orm 对象赋值.
-
 2. 定义 user 需要添加默认值, 否则用 `Sample1TaskDetail.model_valiate` 会报缺少字段错误.
+3. `ul.user_batch_loader` 会根据 `list[task.owner_id]` 来关联 task 和 user 对象. 具体看 `src.services.user.loader`
 
-3. `ul.user_batch_loader` 会根据 `list[task.owner_id]` 来关联 task 和 user 对象.
+
+在 `router.py` 中, 依然是通过 `tq.get_tasks(session)` 来获取初始数据, 接着转换成 `Sample1TaskDetail`.  之后交给 `Resolver` 就能 `resolve` 出所有 `user` 信息.
+
+```python
+@route.get('/tasks-with-detail', response_model=List[Sample1TaskDetail])
+async def get_tasks_with_detail(session: AsyncSession = Depends(db.get_session)):
+    """ 1.3 return list of tasks(user) """
+    tasks = await tq.get_tasks(session)
+    tasks = [Sample1TaskDetail.model_validate(t) for t in tasks]
+    tasks = await Resolver().resolve(tasks)
+    return tasks
+```
 
 
 
