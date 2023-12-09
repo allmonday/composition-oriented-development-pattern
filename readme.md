@@ -82,6 +82,25 @@ uvicorn src.main:app --port=8000 --reload
 ```
 可以在swagger中执行查看每个API的返回值
 
+目录结构
+
+- src 
+    - routers
+        - sample_1
+            - router.py
+            - schema.py // composed schema
+        - sample_2
+    - services
+        - user
+            - query.py // basic queries
+            - loader.py  // dataloaders
+            - model.py // sqlalchemy orm
+            - schema.py  // pydantic schema
+            - mock.py
+        - task
+        - ...
+    - main.py
+
 ## 简单列表
 
 对应的路由:
