@@ -1,16 +1,18 @@
-# 可组合的 API 开发模式
+# 面向组合的 API 开发模式
 
-在构建关系型数据的 API 时, 怎么寻找一个兼顾灵活, 性能, 可维护的方案? 我希望它能够:
+在构建关系型数据的 API 时, 面对层层嵌套的数据, 是否有一个兼顾灵活, 性能, 以及可维护的方案? 
 
-- 支持异步
-- 支持定义多层的数据结构, 定义方式要简洁, 扩展要友好, 支持列表
-- 可以传入参数
-- 利用 Dataloader 避免 N+1 查询
-- 避免 GraphQL 一套接口提供所有服务的模式, 每个 API 接口都有能力快速定义自己所需的类型.
-- 提供 **每层对象** 在`resolve` 完子孙数据后, 做额外计算的能力
-- 挑选需要的返回字段 (类似 GraphQL 编辑 query)
+它应该能够支持以下功能:
+- 异步
+- 定义多层的数据结构, 方式要简洁, **轻松扩展关联数据**
+- 传入全局参数给子孙节点
+- 提供每层`resolve` 完子孙数据后, 操作数据的能力
+- 挑选所需的返回字段
+- 从子孙节点层层往上构建的能力
+- 避免 N+1 查询相关的性能问题
+- 友好的错误提醒, 方便debug
 
-这个 repo 会通过一系列的例子, 结合 `pydantic2-resolve`, 来定义这样一套灵活的面向组合的开发模式.
+本 repo 会通过一系列的例子, 通过`pydantic2-resolve` 和一些约定, 来实现这么一套面向组合的API开发模式.
 
 ## Roadmap:
 
@@ -120,6 +122,8 @@ class Sample1TaskDetail(ts.Task):
 1. 继承`ts.Task`后, `Sample1TaskDetail` 就可以用 `tq.get_tasks(session)` 返回的 orm 对象赋值.
 2. 定义 user 需要添加默认值, 否则用 `Sample1TaskDetail.model_valiate` 会报缺少字段错误.
 3. `ul.user_batch_loader` 会根据 `list[task.owner_id]` 来关联 task 和 user 对象. 具体看 `src.services.user.loader`
+
+> resolve 返回的数据只要是 `pydantic` 可以转化的类型就行. 如果是orm 对象需要配置 `ConfigDict(from_attribute=True)`
 
 在 `router.py` 中, 依然是通过 `tq.get_tasks(session)` 来获取初始数据, 接着转换成 `Sample1TaskDetail`. 之后交给 `Resolver` 就能 `resolve` 出所有 `user` 信息.
 
