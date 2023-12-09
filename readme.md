@@ -20,8 +20,10 @@
 - ~~Dataloader 的复用~~
   - ~~`1 - 1`~~
   - ~~`1 - N`~~
+- 遍历和 `resolve` 的逻辑
 - Resolver 参数
 - 后处理
+- Dataloader 的预加载
 - 面向可组合模式的一些约定
 
 ## Mini-JIRA
@@ -170,7 +172,7 @@ class Sample1StoryDetail(ss.Story):
 
 ### 1 - N
 
-以 `teams` 距离， 有 `team_user` 表维护了 `team`和 `user`之间的关系。
+以 `teams` 举例， 有 `team_user` 表维护了 `team`和 `user`之间的关系。
 所以我们的 `loader` 需要 join `team_user` 来查询 `user`.
 
 因此这种类型的 `dataloader` 的复用是跟着 parent 类型来的。
