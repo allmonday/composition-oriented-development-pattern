@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import src.db as db
 import src.router.sample_1.router as s1_router
+import src.router.sample_2.router as s2_router
 
 async def startup():
     print('start')
@@ -24,3 +25,4 @@ app = FastAPI(debug=True, lifespan=lifespan)
 
 
 app.include_router(s1_router.route)
+app.include_router(s2_router.route)

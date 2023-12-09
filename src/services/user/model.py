@@ -7,3 +7,4 @@ class User(db.Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
+    level: Mapped[str]

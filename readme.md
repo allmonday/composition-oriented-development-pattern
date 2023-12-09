@@ -18,29 +18,56 @@
 - ~~嵌套列表~~
 - ~~多层嵌套列表~~
 - ~~Dataloader 的复用~~
-  - ~~`1 - 1`~~
-  - ~~`1 - N`~~
-- 遍历和 `resolve` 的逻辑
 - Resolver 参数
+- 遍历和 `resolve` 的逻辑
 - 后处理
 - Dataloader 的预加载
 - 面向可组合模式的一些约定
 
-## Mini-JIRA
+## 搭建 Mini JIRA API
 
 让我们从一个 mini-jira 系统开始.
 
-`mini-jira` 有这么些实体概念，分配到了各个 `service·中。
+`mini-jira` 有这么些实体概念，分配到了各个 service 中。
 
-- team
-- sprint
-- story
-- task
-- user
+```mermaid
+---
+title: Mini JIRA
+---
 
-team -> sprint -> story -> task 层层往下都是一对多的关系
+erDiagram
+    Team ||--o{ Sprint : one_to_many
+    Team ||--o{ User : one_to_many
+    Sprint ||--o{ Story : one_to_many
+    Story ||--o{ Task : one_to_many
+    Story ||--|| User : one_to_one
+    Task ||--|| User : one_to_one
 
-task 和 user 是一对一.
+    Team {
+      int id
+      string name
+    }
+    Sprint {
+      int id
+      string name
+    }
+    Story {
+      int id
+      int sprint_id
+      string name
+      int owner_id
+    }
+    Task {
+      int id
+      int story_id
+      string name
+      int owner_id
+    }
+    User {
+      int id
+      string name
+    }
+```
 
 ## 执行代码
 
@@ -51,6 +78,7 @@ pip install -r requirement.txt
 uvicorn src.main:app --port=8000 --reload
 # http://localhost:8000/docs
 ```
+可以在swagger中执行查看每个API的返回值
 
 ## 简单列表
 
@@ -130,7 +158,7 @@ class Sample1TeamDetail(tms.Team):
 
 Dataloader 的作用收集完所有要查询的 parent_ids 之后，一次性查询到所有的 childrent 对象，接着根据 child 的 parent_id 聚合起来。
 
-数据关系可能有 `1 - 1`, `1 - N`, `M - N`, 从 parent 角度看的话，就会只有 `1 - 1` 和 `1 - N` 两种。 对应这两种情况，`pydantic2-resolve` 提供了两个辅助函数
+数据关系可能有 1:1, 1:N, M:N, 从 parent 角度看的话，就会只有 1:1 和 1:N 两种。 对应这两种情况，`pydantic2-resolve` 提供了两个辅助函数
 
 ```python
 from pydantic2_resolve import build_list, build_object
@@ -148,13 +176,13 @@ async def team_to_sprint_loader(team_ids: list[int]):
         return build_list(sprints, team_ids, lambda u: u.team_id)
 ```
 
-可以看到 `1 -1` 的关系查询 id 是目标的主键， 查询非常简单, 因此可复用性最高。
+可以看到 1:1 的关系查询 id 是目标的主键， 查询非常简单, 因此可复用性最高。
 
-而 `1-N` 的查询需要有对应的关系表来确定，所以复用情况受限于 parent 类型。
+而 1:N 的查询需要有对应的关系表来确定，所以复用情况受限于 parent 类型。
 
-### 1 - 1
+### 1:1
 
-用 `story` 举例， `story.owner_id` 指定了一个 story 的负责人， 如果需要把 `user` 信息添加到 `story`, 只需直接复用 `user_batch_loader` 方法。
+用 story 举例， `story.owner_id` 指定了一个 story 的负责人， 如果需要把 user 信息添加到 story, 则只需直接复用 `user_batch_loader` 方法。
 
 ```python
 class Sample1StoryDetail(ss.Story):
@@ -165,17 +193,16 @@ class Sample1StoryDetail(ss.Story):
     owner: Optional[us.User] = None
     def resolve_owner(self, loader=LoaderDepend(ul.user_batch_loader)):
         return loader.load(self.owner_id)
-
 ```
 
 可以在 swagger 中查看输出。
 
-### 1 - N
+### 1:N
 
-以 `teams` 举例， 有 `team_user` 表维护了 `team`和 `user`之间的关系。
-所以我们的 `loader` 需要 join `team_user` 来查询 `user`.
+以 teams 举例， team_user 表维护了 team 和 user 之间的关系。
+所以我们的 loader 需要 join team_user 来查询 user.
 
-因此这种类型的 `dataloader` 的复用是跟着 parent 类型来的。
+因此这种类型的 dataloader 的复用是跟着 parent 类型走的.
 
 ```python
 # team -> user
@@ -195,7 +222,7 @@ async def team_to_user_loader(team_ids: list[int]):
         return [dct.get(team_id, []) for team_id in team_ids]
 ```
 
-然后去 `sample_1.schema:Sample1TeamDetail` 中添加 `members` 以及刚刚创建的 loader 即可.
+然后去 `sample_1.schema:Sample1TeamDetail` 中添加 members 以及刚刚创建的 loader 即可.
 
 ```python
 
@@ -209,6 +236,48 @@ class Sample1TeamDetail(tms.Team):
         return loader.load(self.id)
 ```
 
+> 顺便一提, `resolve_method` 并不需要从顶层class就开始定义. `Resolver` 会递归遍历然后找到`resolver_method` 进行解析.
+
 至此， Dataloader 的复用性就介绍完了。
 
+
 之后的案例会进入 `sample_2` router 中描述。
+
+
+## Resolver 参数
+
+考虑这么一种场景, 我需要列出 team 中 level 为 senior (或者其他值) 的 member. 于是 loader 需要提供一种添加过滤条件的手段.
+
+在 `src.services.user.loader` 中添加 `UserByLevelLoader`, 它又一个类属性 `level`. 在内部, 通过 `self.level` 就能实现功能, 现在问题是怎么为 `self.level` 赋值.
+
+```python
+
+# team -> user (level filter)
+class UserByLevelLoader(DataLoader):
+    level: str = ''
+
+    async def batch_load_fn(self, team_ids: list[int]):
+        async with db.async_session() as session:
+            stmt = (select(tm.TeamUser.team_id, User)
+                    .join(tm.TeamUser, tm.TeamUser.user_id == User.id)
+                    .where(tm.TeamUser.team_id.in_(team_ids))
+                    .where(User.level == self.level))  # <--- filter
+            pairs = (await session.execute(stmt))
+            dct = defaultdict(list)
+            for pair in pairs:
+                dct[pair.team_id].append(pair.User)
+            return [dct.get(team_id, []) for team_id in team_ids]
+```
+
+这个参数可以从 Resolver 中传入, `loader_filters` 中指定要设置参数的 DataLoader 子类和具体参数, 在内部执行时就会赋值过去.
+
+```python
+teams = await tmq.get_teams(session)
+teams = [Sample2TeamDetail.model_validate(t) for t in teams]
+teams = await Resolver(loader_filters={
+    ul.UserByLevelLoader: {
+        "level": 'senior'
+    }
+}).resolve(teams)
+return teams
+```
