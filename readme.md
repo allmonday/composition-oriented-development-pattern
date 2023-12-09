@@ -156,6 +156,9 @@ async def get_tasks_with_detail(session: AsyncSession = Depends(db.get_session))
     return tasks
 ```
 
+整个结构:
+![](./static/service_and_router.png)
+
 ## 多层嵌套列表
 
 使用相同的方式， 我们从 `tasks-with-details` 构建到了 `teams-with-details`. 虽然是层层嵌套，但定义的方式非常简单。
