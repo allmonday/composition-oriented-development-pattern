@@ -20,9 +20,7 @@
 - ~~嵌套列表~~
 - ~~多层嵌套列表~~
 - ~~Dataloader 的复用~~
-- Resolver 参数
-- 遍历和 `resolve` 的逻辑
-- 后处理
+- 各种配置 & 使用场景
 - Dataloader 的预加载
 - 面向可组合模式的一些约定
 
@@ -269,8 +267,9 @@ class Sample1TeamDetail(tms.Team):
 
 
 
-## Resolver 参数
+## 各种配置 & 使用场景
 
+### Filter
 进入 `sample_2`.
 
 考虑这么一种场景, 需要列出 team 中 level 为 senior (或者其他值) 的 members, 那么 loader 需要提供添加过滤条件的手段.
@@ -311,6 +310,8 @@ teams = await Resolver(loader_filters={
 return teams
 ```
 
+
+### Expose
 
 进入 `sample_3`.
 
