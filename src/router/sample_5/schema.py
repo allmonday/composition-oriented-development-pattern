@@ -1,5 +1,7 @@
 from typing import List, Optional
 from pydantic2_resolve import LoaderDepend
+from pydantic import BaseModel
+import src.db as db
 
 import src.services.task.loader as tl
 import src.services.user.loader as ul
@@ -12,13 +14,15 @@ import src.services.user.schema as us
 import src.services.sprint.schema as sps
 import src.services.team.schema as tms
 
-class Sample4TaskDetail(ts.Task):
+import src.services.team.query as tmq
+
+class Sample5TaskDetail(ts.Task):
     user: Optional[us.User] = None
     def resolve_user(self, loader=LoaderDepend(ul.user_batch_loader)):
         return loader.load(self.owner_id)
 
-class Sample4StoryDetail(ss.Story):
-    tasks: list[Sample4TaskDetail] = []
+class Sample5StoryDetail(ss.Story):
+    tasks: list[Sample5TaskDetail] = []
     def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
         return loader.load(self.id)
     
@@ -26,8 +30,8 @@ class Sample4StoryDetail(ss.Story):
     def post_task_count(self):
         return len(self.tasks)
     
-class Sample4SprintDetail(sps.Sprint):
-    stories: list[Sample4StoryDetail] = []
+class Sample5SprintDetail(sps.Sprint):
+    stories: list[Sample5StoryDetail] = []
     def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
         return loader.load(self.id)
 
@@ -35,8 +39,8 @@ class Sample4SprintDetail(sps.Sprint):
     def post_task_count(self):
         return sum([s.task_count for s in self.stories])
 
-class Sample4TeamDetail(tms.Team):
-    sprints: list[Sample4SprintDetail] = []
+class Sample5TeamDetail(tms.Team):
+    sprints: list[Sample5SprintDetail] = []
     def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
         return loader.load(self.id)
 
@@ -47,3 +51,12 @@ class Sample4TeamDetail(tms.Team):
     description: str = ''
     def post_default_handler(self):
         self.description = f'team: "{self.name}" has {self.task_count} tasks in total.' 
+
+    
+class Sample5Root(BaseModel):
+    summary: str
+    teams: list[Sample5TeamDetail] = [] 
+    async def resolve_teams(self):
+        async with db.async_session() as session:
+            teams = await tmq.get_teams(session)
+            return teams
