@@ -267,14 +267,17 @@ class Sample1TeamDetail(tms.Team):
 至此， Dataloader 的复用性就介绍完了。
 
 
-之后的案例会进入 `sample_2` router 中描述。
 
 
 ## Resolver 参数
 
-考虑这么一种场景, 我需要列出 team 中 level 为 senior (或者其他值) 的 member. 于是 loader 需要提供一种添加过滤条件的手段.
+进入 `sample_2`.
 
-在 `src.services.user.loader` 中添加 `UserByLevelLoader`, 它又一个类属性 `level`. 在内部, 通过 `self.level` 就能实现功能, 现在问题是怎么为 `self.level` 赋值.
+考虑这么一种场景, 需要列出 team 中 level 为 senior (或者其他值) 的 members, 那么 loader 需要提供添加过滤条件的手段.
+
+我们可以这么做, 在 `src.services.user.loader` 中添加 `UserByLevelLoader`, 它有一个类属性 `level`. 在初始化 loader 之后, 通过设置 `self.level` 就能实现功能, 现在问题是怎么为 `self.level` 赋值.
+
+> 一个 loader 实例的 filter 字段值是不可改变的. 不同的 filter 组合需要对应到各自的 loader 实例
 
 ```python
 
@@ -306,4 +309,34 @@ teams = await Resolver(loader_filters={
     }
 }).resolve(teams)
 return teams
+```
+
+
+进入 `sample_3`.
+
+第二种情况, 我想让 task 又一个 full_name 字段, 直接包含所有层级的前缀. 比如 team_a -> sprint_a -> story_a -> task_a, 那么 task_a 的 full_name就是 `team_a/sprint_a/story_a/task_a`
+
+schema 可以通过 `__pydantic_resolve_expose__ = {'name': 'team_name'}` 这样的方式, 给自己的某个字段取别名, 然后暴露给自己所有的子孙节点.
+
+> 别名需要保证全局 (整个Resolve scope) 唯一.
+
+反过来在任意子孙节点, 都能够通过 ancestor_context 参数, 来读取到直接祖先的 `name` 字段的值.
+
+```python
+class Sample3TeamDetail(tms.Team):
+    __pydantic_resolve_expose__ = {'name': 'team_name'}  # expose name
+
+    sprints: list[Sample3SprintDetail] = []
+    def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
+        return loader.load(self.id)
+
+class Sample3TaskDetail(ts.Task):
+    ...
+
+    full_name: str = ''
+    def resolve_full_name(self, ancestor_context: Dict):
+        team = ancestor_context['team_name']
+        sprint = ancestor_context['sprint_name']
+        story = ancestor_context['story_name']
+        return f"{team}/{sprint}/{story}/{self.name}"
 ```
