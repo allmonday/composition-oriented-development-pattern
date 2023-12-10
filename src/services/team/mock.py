@@ -1,8 +1,8 @@
 from .model import Team, TeamUser
 
 teams = [
-    Team(id=1, name="Team A"),
-    Team(id=2, name="Team B")
+    Team(id=1, name="team-A"),
+    Team(id=2, name="team-B")
 ]
 
 team_users = [
