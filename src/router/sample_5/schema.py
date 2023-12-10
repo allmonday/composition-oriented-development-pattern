@@ -55,8 +55,9 @@ class Sample5TeamDetail(tms.Team):
     
 class Sample5Root(BaseModel):
     summary: str
-    teams: list[Sample5TeamDetail] = [] 
-    async def resolve_teams(self):
+    team: Optional[Sample5TeamDetail] = None 
+    async def resolve_team(self, context):
         async with db.async_session() as session:
-            teams = await tmq.get_teams(session)
-            return teams
+            team_id = context['team_id']
+            team = await tmq.get_team_by_id(session, team_id)
+            return team
