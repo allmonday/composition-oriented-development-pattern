@@ -93,7 +93,7 @@ uvicorn src.main:app --port=8000 --reload
             - query.py // basic queries
             - loader.py  // dataloaders
             - model.py // sqlalchemy orm
-            - schema.py  // pydantic schema
+            - schema.py  // base schema
             - mock.py
         - task
         - ...
