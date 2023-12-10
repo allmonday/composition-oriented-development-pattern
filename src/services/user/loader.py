@@ -38,6 +38,7 @@ class UserByLevelLoader(DataLoader):
     level: str = ''
 
     async def batch_load_fn(self, team_ids: list[int]):
+        print(self.level)
         async with db.async_session() as session:
             stmt = (select(tm.TeamUser.team_id, User)
                     .join(tm.TeamUser, tm.TeamUser.user_id == User.id)

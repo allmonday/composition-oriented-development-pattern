@@ -310,6 +310,43 @@ teams = await Resolver(loader_filters={
 return teams
 ```
 
+顺带说一下, 如果需要使用 loader 多次, 比如同时查询 level senior 和 junior 的两组members, 可以对Loader 做一次拷贝之后变成新的Loader 来使用.
+
+```python
+# schema.py
+def copy_class(name, Kls):
+    return type(name, Kls.__bases__, dict(Kls.__dict__))
+
+SeniorMemberLoader = copy_class('SeniorMemberLoader', ul.UserByLevelLoader)
+JuniorMemberLoader = copy_class('JuniorMemberLoader', ul.UserByLevelLoader)
+
+
+class Sample2TeamDetailMultipleLevel(tms.Team):
+    senior_members: list[us.User] = []
+    def resolve_senior_members(self, loader=LoaderDepend(SeniorMemberLoader)):
+        return loader.load(self.id)
+
+    junior_members: list[us.User] = []
+    def resolve_junior_members(self, loader=LoaderDepend(JuniorMemberLoader)):
+        return loader.load(self.id)
+
+# router.py
+@route.get('/teams-with-detail-of-multiple-level', response_model=List[Sample2TeamDetail])
+async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depends(db.get_session)):
+    """1.2 teams with senior and junior members"""
+    teams = await tmq.get_teams(session)
+    teams = [Sample2TeamDetailMultipleLevel.model_validate(t) for t in teams]
+    teams = await Resolver(loader_filters={
+        SeniorMemberLoader: {
+            "level": 'senior'
+        },
+        JuniorMemberLoader: {
+            "level": 'junior'
+        }
+    }).resolve(teams)
+    return teams
+```
+
 
 ### Expose
 
