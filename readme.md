@@ -98,6 +98,8 @@ routers 则通过**组合**多个 service 提供的 schema + query + loader 来�
 
 ![](./static/explain.png)
 
+example:
+
 ```python
 from typing import Optional
 from pydantic2_resolve import LoaderDepend
@@ -115,7 +117,7 @@ import src.services.user.schema as us
 import src.services.sprint.schema as sps
 import src.services.team.schema as tms
 
-
+# compose together
 class Sample1TaskDetail(ts.Task):
     user: Optional[us.User] = None
     def resolve_user(self, loader=LoaderDepend(ul.user_batch_loader)):
@@ -129,29 +131,14 @@ class Sample1StoryDetail(ss.Story):
     owner: Optional[us.User] = None
     def resolve_owner(self, loader=LoaderDepend(ul.user_batch_loader)):
         return loader.load(self.owner_id)
-    
-class Sample1SprintDetail(sps.Sprint):
-    stories: list[Sample1StoryDetail] = []
-    def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
-        return loader.load(self.id)
 
-class Sample1TeamDetail(tms.Team):
-    sprints: list[Sample1SprintDetail] = []
-    def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
-        return loader.load(self.id)
-    
-    members: list[us.User] = []
-    def resolve_members(self, loader=LoaderDepend(ul.team_to_user_loader)):
-        return loader.load(self.id)
-
-# query
-@route.get('/teams-with-detail', response_model=List[Sample1TeamDetail])
-async def get_teams_with_detail(session: AsyncSession = Depends(db.get_session)):
-    """ 1.6 return list of team(sprint(story(task(user)))) """
-    teams = await tmq.get_teams(session)  # query
-    teams = [Sample1TeamDetail.model_validate(t) for t in teams]
-    teams = await Resolver().resolve(teams)
-    return teams
+# query 
+@route.get('/stories-with-detail', response_model=List[Sample1StoryDetail])
+async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session)):
+    stories = await sq.get_stories(session)
+    stories = [Sample1StoryDetail.model_validate(t) for t in stories]
+    stories = await Resolver().resolve(stories)
+    return stories
 ```
 
 
