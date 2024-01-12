@@ -22,19 +22,17 @@
 
 services 主要负责某一种业务服务的:
 - schema 定义
-- 业务query
-- 为拼装数据服务的 dataloader
+- 业务 query
+- dataloader (服务于数据拼装)
 
-routers 则通过**组合**多个 service 提供的 schema + query + loader 来返回需要的数据.
+routers 则通过**组合**多个 service 的 query + (schema + loader) 来返回需要的数据.
 
-比如 `Sample1TeamDetail` 就是由多个 schema + loader 组成的.
-而 `Sample1TeamDetail` 继承的 Teams 数据由业务query 来提供.
-
-这种组合方式可以实现通用服务和具体业务之间的自由组合, 从service 简洁快速的构建出满足业务需求的 router API.
+这种组合方式可以实现通用服务和具体业务之间的自由组合, 从service 简洁快速的构建出满足业务需求的 router/API.
 
 ![](./static/explain.png)
 
-example:
+比如下例中, `Sample1StoryDetail` 就是由多个 schema + loader 组成的.
+而 `Sample1StoryDetail` 继承的 Teams 数据由业务query 来提供.
 
 ```python
 from typing import Optional
