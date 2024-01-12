@@ -18,11 +18,21 @@
 
 ## 什么是面向组合的模式?
 
-在本repo 的案例中, 有 services 和 routers 两个目录. (router 也可看作 controller)
+在日常开发中, 为了获取复杂结构的数据, 我们常常会选择client 多次请求后拼装, 或者在 service 中构建复杂查询来实现.
+
+这时如果要求的数据发生了变化, 那么client 或者 service 层的查询也要跟着调整.
+
+这种变化污染了理想的分层设计, 把对业务的改动侵入到了 service 之中. 
+
+现在流行的思路是借助graphql, 但整套方案的引入成本对后端来说并不低. 并且前端还需要手写 query 来描述字段, 没有直接 rpc-like 的请求体验顺畅.  (rpc-like 可以参考 openapi + typescript-openapi-codegen)
+
+面向组合的开发模式就是为了解决这个问题, 通过使用 `pydantic2-resolve` 让router 层负责构建schema 来封装变化, 从而避免 service 和 client 的改动. 
+
+在本repo 的案例中, 有 services 和 routers 两个目录.
 
 services 主要负责某一种业务服务的:
 - schema 定义
-- 业务 query
+- 业务 query (业务root 数据的查询, 可以理解成还未拼装关联数据的主数据.)
 - dataloader (服务于数据拼装)
 
 routers 则通过**组合**多个 service 的 query + (schema + loader) 来返回需要的数据.
