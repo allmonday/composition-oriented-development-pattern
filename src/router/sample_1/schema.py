@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from pydantic2_resolve import LoaderDepend
 
 import src.services.task.loader as tl

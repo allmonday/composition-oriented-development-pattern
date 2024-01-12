@@ -80,93 +80,56 @@ uvicorn src.main:app --port=8000 --reload
 ```
 可以在swagger中执行查看每个API的返回值
 
-目录结构
+## 什么是面向组合的模式?
 
-- src 
-    - routers
-        - sample_1
-            - router.py
-            - schema.py // composed schema
-        - sample_2
-    - services
-        - user
-            - query.py // basic queries
-            - loader.py  // dataloaders
-            - model.py // sqlalchemy orm
-            - schema.py  // base schema
-            - mock.py
-        - task
-        - ...
-    - main.py
+在本repo 的案例中, 有 services 和 routers 两个目录. (router 也可看作 controller)
 
-## 简单列表
+services 主要负责某一种业务服务的:
+- schema 定义
+- 业务query
+- 为拼装数据服务的 dataloader
 
-对应的路由:
+routers 则通过**组合**多个 service 提供的 schema + query + loader 来返回需要的数据.
 
-- `sample_1.router:get_users`
-- `sample_1.router:get_tasks`
+比如 `Sample1TeamDetail` 就是由多个 schema + loader 组成的.
+而 `Sample1TeamDetail` 继承的 Teams 数据由业务query 来提供.
 
-在`src.router.sample_1` 中，我们依次创建 users, tasks 的 API， 以 list[T] 的形式返回。
+这种组合方式可以实现通用服务和具体业务之间的自由组合, 从service 简洁快速的构建出满足业务需求的 router API.
+
+![](./static/explain.png)
 
 ```python
-import src.services.task.query as tq
+from typing import Optional
+from pydantic2_resolve import LoaderDepend
 
-@route.get('/tasks', response_model=List[ts.Task])
-async def get_step_1_tasks(session: AsyncSession = Depends(db.get_session)):
-    """ 1.2 return list of tasks """
-    return await tq.get_tasks(session)
-```
+# loaders
+import src.services.task.loader as tl
+import src.services.user.loader as ul
+import src.services.story.loader as sl
+import src.services.sprint.loader as spl
 
-通过引入 `src.services.user.query` 和 `src.services.task.query` 中的查询,返回了 `list[orm]` 对象, 然后 FastAPI 会自动将对象转成 response_model 中对应的类型.
+# schemas
+import src.services.story.schema as ss
+import src.services.task.schema as ts
+import src.services.user.schema as us
+import src.services.sprint.schema as sps
+import src.services.team.schema as tms
 
-## 嵌套列表
 
-接下来我们要将将 user 信息添加到 task 中, 在 sample_1 目录下创建 `schema.py`, 定义一个扩展了 user 信息的 `Sample1TaskDetail` 类型.
-
-> 为了避免类型名字重复,使用 router 名字作为前缀
->
-> 因此 Sample1 开头的 schema 都是属于 sample_1 路由的 (这点在生成前端 sdk ts 类型的时候会很有用.)
-
-```python
 class Sample1TaskDetail(ts.Task):
     user: Optional[us.User] = None
     def resolve_user(self, loader=LoaderDepend(ul.user_batch_loader)):
         return loader.load(self.owner_id)
-```
 
-几个注意点:
-
-1. 继承`ts.Task`后, `Sample1TaskDetail` 就可以用 `tq.get_tasks(session)` 返回的 orm 对象赋值.
-2. 定义 user 需要添加默认值, 否则用 `Sample1TaskDetail.model_valiate` 会报缺少字段错误.
-3. `ul.user_batch_loader` 会根据 `list[task.owner_id]` 来关联 task 和 user 对象. 具体看 `src.services.user.loader`
-
-> resolve 返回的数据只要是 pydantic 可以转化的类型就行. 如果是orm 对象需要配置 `ConfigDict(from_attribute=True)`
-
-在 `router.py` 中, 依然是通过 `tq.get_tasks(session)` 来获取初始数据, 接着转换成 `Sample1TaskDetail`. 之后交给 `Resolver` 就能 resolve 出所有 user 信息.
-
-```python
-@route.get('/tasks-with-detail', response_model=List[Sample1TaskDetail])
-async def get_tasks_with_detail(session: AsyncSession = Depends(db.get_session)):
-    """ 1.3 return list of tasks(user) """
-    tasks = await tq.get_tasks(session)
-    tasks = [Sample1TaskDetail.model_validate(t) for t in tasks]
-    tasks = await Resolver().resolve(tasks)
-    return tasks
-```
-
-引用关系:
-![](./static/service_and_router.png)
-
-## 多层嵌套列表
-
-使用相同的方式， 我们从 `tasks-with-details` 构建到了 `teams-with-details`. 虽然是层层嵌套，但定义的方式非常简单。
-
-```python
 class Sample1StoryDetail(ss.Story):
     tasks: list[Sample1TaskDetail] = []
     def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
         return loader.load(self.id)
 
+    owner: Optional[us.User] = None
+    def resolve_owner(self, loader=LoaderDepend(ul.user_batch_loader)):
+        return loader.load(self.owner_id)
+    
 class Sample1SprintDetail(sps.Sprint):
     stories: list[Sample1StoryDetail] = []
     def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
@@ -176,354 +139,28 @@ class Sample1TeamDetail(tms.Team):
     sprints: list[Sample1SprintDetail] = []
     def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
         return loader.load(self.id)
-```
-
-## Dataloader 的复用
-
-Dataloader 的作用收集完所有要查询的 parent_ids 之后，一次性查询到所有的 childrent 对象，接着根据 child 的 parent_id 聚合起来。
-
-数据关系可能有 1:1, 1:N, M:N, 从 parent 角度看的话，就会只有 1:1 和 1:N 两种。 对应这两种情况，`pydantic2-resolve` 提供了两个辅助函数
-
-```python
-from pydantic2_resolve import build_list, build_object
-
-# service.user.loader:  1 - 1
-async def user_batch_loader(user_ids: list[int]):
-    async with db.async_session() as session:
-        users = await batch_get_users_by_ids(session, user_ids)
-        return build_object(users, user_ids, lambda u: u.id)
-
-# service.sprint.loader:  1 - N
-async def team_to_sprint_loader(team_ids: list[int]):
-    async with db.async_session() as session:
-        sprints = await batch_get_sprint_by_ids(session, team_ids)
-        return build_list(sprints, team_ids, lambda u: u.team_id)
-```
-
-可以看到 1:1 的关系查询 id 是目标的主键， 查询非常简单, 因此可复用性最高。
-
-而 1:N 的查询需要有对应的关系表来确定，所以复用情况受限于 parent 类型。
-
-### 1:1
-
-用 story 举例， `story.owner_id` 指定了一个 story 的负责人， 如果需要把 user 信息添加到 story, 则只需直接复用 `user_batch_loader` 方法。
-
-```python
-class Sample1StoryDetail(ss.Story):
-    tasks: list[Sample1TaskDetail] = []
-    def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
-        return loader.load(self.id)
-
-    owner: Optional[us.User] = None
-    def resolve_owner(self, loader=LoaderDepend(ul.user_batch_loader)):
-        return loader.load(self.owner_id)
-```
-
-可以在 swagger 中查看输出。
-
-### 1:N
-
-以 teams 举例， team_user 表维护了 team 和 user 之间的关系。
-所以我们的 loader 需要 join team_user 来查询 user.
-
-因此这种类型的 dataloader 的复用是跟着 parent 类型走的.
-
-```python
-# team -> user
-async def batch_get_user_by_team_ids(session: AsyncSession, team_ids: list[int]):
-    stmt = (select(tm.TeamUser.team_id, User)
-            .join(tm.TeamUser, tm.TeamUser.user_id == User.id)
-            .where(tm.TeamUser.team_id.in_(team_ids)))
-    rows = (await session.execute(stmt))
-    return rows
-
-async def team_to_user_loader(team_ids: list[int]):
-    async with db.async_session() as session:
-        pairs = await batch_get_user_by_team_ids(session, team_ids)
-        dct = defaultdict(list)  # 因为是 1 - N 所以default 是 list
-        for pair in pairs:
-            dct[pair.team_id].append(pair.User)
-        return [dct.get(team_id, []) for team_id in team_ids]
-```
-
-然后去 `sample_1.schema:Sample1TeamDetail` 中添加 members 以及刚刚创建的 loader 即可.
-
-```python
-
-class Sample1TeamDetail(tms.Team):
-    sprints: list[Sample1SprintDetail] = []
-    def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
-        return loader.load(self.id)
-
+    
     members: list[us.User] = []
     def resolve_members(self, loader=LoaderDepend(ul.team_to_user_loader)):
         return loader.load(self.id)
-```
 
-> 顺便一提, `resolve_method` 并不需要从顶层class就开始定义. `Resolver` 会递归遍历然后找到`resolver_method` 进行解析.
-
-至此， Dataloader 的复用性就介绍完了。
-
-
-
-
-## 各种配置 & 使用场景
-
-### Filter
-进入 `sample_2`.
-
-考虑这么一种场景, 需要列出 team 中 level 为 senior (或者其他值) 的 members, 那么 loader 需要提供添加过滤条件的手段.
-
-我们可以这么做, 在 `src.services.user.loader` 中添加 `UserByLevelLoader`, 它有一个类属性 `level`. 在初始化 loader 之后, 通过设置 `self.level` 就能实现功能, 现在问题是怎么为 `self.level` 赋值.
-
-> 一个 loader 实例的 filter 字段值是不可改变的. 不同的 filter 组合需要对应到各自的 loader 实例
-
-```python
-
-# team -> user (level filter)
-class UserByLevelLoader(DataLoader):
-    level: str = ''
-
-    async def batch_load_fn(self, team_ids: list[int]):
-        async with db.async_session() as session:
-            stmt = (select(tm.TeamUser.team_id, User)
-                    .join(tm.TeamUser, tm.TeamUser.user_id == User.id)
-                    .where(tm.TeamUser.team_id.in_(team_ids))
-                    .where(User.level == self.level))  # <--- filter
-            pairs = (await session.execute(stmt))
-            dct = defaultdict(list)
-            for pair in pairs:
-                dct[pair.team_id].append(pair.User)
-            return [dct.get(team_id, []) for team_id in team_ids]
-```
-
-这个参数可以从 Resolver 中传入, `loader_filters` 中指定要设置参数的 DataLoader 子类和具体参数, 在内部执行时就会赋值过去.
-
-```python
-teams = await tmq.get_teams(session)
-teams = [Sample2TeamDetail.model_validate(t) for t in teams]
-teams = await Resolver(loader_filters={
-    ul.UserByLevelLoader: {
-        "level": 'senior'
-    }
-}).resolve(teams)
-return teams
-```
-
-顺带说一下, 如果需要使用 loader 多次, 比如同时查询 level senior 和 junior 的两组members, 可以对Loader 做一次拷贝之后变成新的Loader 来使用.
-
-```python
-# schema.py
-def copy_class(name, Kls):
-    return type(name, Kls.__bases__, dict(Kls.__dict__))
-
-SeniorMemberLoader = copy_class('SeniorMemberLoader', ul.UserByLevelLoader)
-JuniorMemberLoader = copy_class('JuniorMemberLoader', ul.UserByLevelLoader)
-
-
-class Sample2TeamDetailMultipleLevel(tms.Team):
-    senior_members: list[us.User] = []
-    def resolve_senior_members(self, loader=LoaderDepend(SeniorMemberLoader)):
-        return loader.load(self.id)
-
-    junior_members: list[us.User] = []
-    def resolve_junior_members(self, loader=LoaderDepend(JuniorMemberLoader)):
-        return loader.load(self.id)
-
-# router.py
-@route.get('/teams-with-detail-of-multiple-level', response_model=List[Sample2TeamDetail])
-async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depends(db.get_session)):
-    """1.2 teams with senior and junior members"""
-    teams = await tmq.get_teams(session)
-    teams = [Sample2TeamDetailMultipleLevel.model_validate(t) for t in teams]
-    teams = await Resolver(loader_filters={
-        SeniorMemberLoader: {
-            "level": 'senior'
-        },
-        JuniorMemberLoader: {
-            "level": 'junior'
-        }
-    }).resolve(teams)
+# query
+@route.get('/teams-with-detail', response_model=List[Sample1TeamDetail])
+async def get_teams_with_detail(session: AsyncSession = Depends(db.get_session)):
+    """ 1.6 return list of team(sprint(story(task(user)))) """
+    teams = await tmq.get_teams(session)  # query
+    teams = [Sample1TeamDetail.model_validate(t) for t in teams]
+    teams = await Resolver().resolve(teams)
     return teams
 ```
 
 
-### Expose
-
-进入 `sample_3`.
-
-第二种情况, 我想让 task 又一个 full_name 字段, 直接包含所有层级的前缀. 比如 team_a -> sprint_a -> story_a -> task_a, 那么 task_a 的 full_name就是 `team_a/sprint_a/story_a/task_a`
-
-schema 可以通过 `__pydantic_resolve_expose__ = {'name': 'team_name'}` 这样的方式, 给自己的某个字段取别名, 然后暴露给自己所有的子孙节点.
-
-> 别名需要保证全局 (整个Resolve scope) 唯一.
-
-反过来在任意子孙节点, 都能够通过 ancestor_context 参数, 来读取到直接祖先的 `name` 字段的值.
-
-```python
-class Sample3TeamDetail(tms.Team):
-    __pydantic_resolve_expose__ = {'name': 'team_name'}  # expose name
-
-    sprints: list[Sample3SprintDetail] = []
-    def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
-        return loader.load(self.id)
-
-class Sample3TaskDetail(ts.Task):
-    ...
-
-    full_name: str = ''
-    def resolve_full_name(self, ancestor_context: Dict):
-        team = ancestor_context['team_name']
-        sprint = ancestor_context['sprint_name']
-        story = ancestor_context['story_name']
-        return f"{team}/{sprint}/{story}/{self.name}"
-```
-
-## Post hooks
-
-进入 `sample_4` 
-
-这次我想让 team, sprint, story 上面添加 task_count 字段, 来统计每一个级别包含的 task 总数. 
-
-使用 `post_method` 可以做到, `post_method` 会在class 的所有 `resolve_methods` 执行完之后, 以同步的方式执行.
-
-> 是的, 作为post hook, 它不支持 async
-
-```python
-class Sample4StoryDetail(ss.Story):
-    tasks: list[Sample4TaskDetail] = []
-    def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
-        return loader.load(self.id)
-    
-    task_count: int = 0
-    def post_task_count(self):
-        return len(self.tasks)
-    
-class Sample4SprintDetail(sps.Sprint):
-    stories: list[Sample4StoryDetail] = []
-    def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
-        return loader.load(self.id)
-
-    task_count: int = 0
-    def post_task_count(self):
-        return sum([s.task_count for s in self.stories])
-
-class Sample4TeamDetail(tms.Team):
-    sprints: list[Sample4SprintDetail] = []
-    def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
-        return loader.load(self.id)
-
-    task_count: int = 0
-    def post_task_count(self):
-        return sum([s.task_count for s in self.sprints])
-```
-
-从 Story 开始, 每一层都定义了一个 `task_count` 字段, 然后 `post_task_count` 会在 `tasks` 数据获取到之后执行, 计算出 `self.task` 的长度
-
-等所有 post 方法执行完后, 才代表 Sprint 中的 `resolve_stories` 执行完毕, 接着 Sprint 中的 `post_task_count` 开始执行, 把所有 story 的 task_count 相加.
-
-在往上 Team 也是类似的逻辑.
-
-最后就能计算出每一层中的 task_count.
-
-顺带一提, 在 post 方法中, 有一个特殊的方法 `post_default_handler`, 它会在所有的 `post_method` 执行完后再执行. 用它我们可以做一些有趣的功能:
-
-比如我们可以为 Team 添加一个 description, 来总结 team 有多少task. 因为 `default_post_handler` 会在 resolve 和 post 执行完之后才执行, 所以就能获得所有信息 (task_count) 来生成 description.
-
-```python
-class Sample4TeamDetail(tms.Team):
-    sprints: list[Sample4SprintDetail] = []
-    def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
-        return loader.load(self.id)
-
-    task_count: int = 0
-    def post_task_count(self):
-        return sum([s.task_count for s in self.sprints])
-    
-    description: str = ''
-    def post_default_handler(self):
-        self.description = f'team: {self.name} has {self.task_count} tasks in total.' 
-```
-
-### 放在一块
-
-进入 `sample_5`
-
-在前面的例子中,我们返回的始终是一个数组, 如果往上想一层, 我定义一个 schema, 这个 schema 包含了一个页面所需要的所有数据, 那会是怎么样?
-
-动手来试一下, 假设页面要展示 summary 和 teams 信息:
-
-```python
-class Sample5Root(BaseModel):
-    summary: str
-
-    teams: list[Sample5TeamDetail] = [] 
-    async def resolve_teams(self):
-        async with db.async_session() as session:
-            teams = await tmq.get_teams(session)
-            return teams
-```
-
-可以看到, 只要把原先 router 中的 query 搬到schema 里面就好了. so easy. 甚至手动做数据转换的步骤都省略了, 因为 Resolver 会自己做转换.
-
-```python
-@route.get('/page-info', response_model=Sample5Root)
-async def get_page_info(session: AsyncSession = Depends(db.get_session)):
-    page = Sample5Root(summary="hello world")
-    page = await Resolver().resolve(page)
-    return page
-```
-
-router 里面只要初始化一下, 剩下的交给 Resolver 就好了.
-
-> 到这里, 你也许会发现, 定义schema 的过程和使用 GraphQL 手写查询体的体验是很相似的, 区别是 Resolver 处理的 schema 还需要自己选择 loader 和 schema. 配置多了点, 但是自由度和功能多了许多.
->
-> 一个小的最佳实践: resolve_method 中不要自己写业务查询逻辑, 要调用 servcie 中封装好的 query 方法. 这样可以保持 schema 的简洁和拼装的清晰. schema 中要么调用 query, 要么调用loader, 用配置的思考方式来定义 schema.
-
-让我们更进一步, 让 router 可以接收一个 `team_id` 参数, 然后teams 变成 team, 这时就可以通过 context 来传递参数了.
-context 是一个保留参数, 在所有 resolve 和 post 方法中都可以使用它来获取 Resolver 中定义的参数.
-
-```python
-# router
-@route.get('/page-info/{team_id}', response_model=Sample5Root)
-async def get_page_info(team_id: int, session: AsyncSession = Depends(db.get_session)):
-    page = Sample5Root(summary="hello world")
-    page = await Resolver(context={'team_id': team_id}).resolve(page)
-    return page
-
-# schema
-class Sample5Root(BaseModel):
-    summary: str
-
-    team: Optional[Sample5TeamDetail] = None 
-    async def resolve_team(self, context):
-        async with db.async_session() as session:
-            team = await tmq.get_team_by_id(session, context['team_id'])
-            return team
-```
-
-
-### 挑选所需的字段
-
-进入 `sample_6`
-
-既然提到了 GraphQL, 在查询体中可以选择需要的字段, 那么在 Resolver里面怎么做呢? 以 Sprint为例, 我不想让 status 字段显示出来.
-
-需要分两步, 第一步是去拷贝一下 Sprint 里面要的字段, 第二步是添加 `@ensure_subset` 装饰器, 它会检查字段是否和 Sprint 中的名字,类型一致 (避免修改了 Sprint 之后, 其他复制的字段出现不一致, 这样就会给出错误提醒. )
-
-> 当前的实现要手动复制字段还是有点啰嗦的, 下个阶段计划只需要在装饰器中提供字段名字列表.
-
-```python
-@ensure_subset(sps.Sprint)
-class Sample6SprintDetail(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    # status: str
-    team_id: int
-
-    stories: list[Sample6StoryDetail] = []
-    def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
-        return loader.load(self.id)
-```
+## 功能介绍
+- [多层嵌套结构的构建](./src/router/sample_1/readme.md)
+- [Loader中对数据过滤](./src/router/sample_2/readme.md)
+- [将字段暴露给子孙节点](./src/router/sample_3/readme.md)
+- [resolve结束后, 对获取数据的后处理](./src/router/sample_4/readme.md)
+- [Loader的复用](./src/router/sample_5/readme.md)
+- [挑选需要返回的字段](./src/router/sample_6/readme.md)
+- [反向拼装数据 wip](./src/router/sample_7/readme.md)
+- [从面向接口测试变成面向service测试 wip]()
