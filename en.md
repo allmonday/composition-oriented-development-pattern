@@ -1,4 +1,4 @@
-# Composable API Development Pattern
+# Composable API Development Pattern  (WIP)
 When building an API for relational data, is there a solution that balances flexibility, performance, and maintainability when dealing with nested data?
 
 It should be able to support the following features:
