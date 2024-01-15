@@ -16,6 +16,10 @@
 
 本 repo 会通过一系列的例子, 通过`pydantic2-resolve` 和一些约定, 来实现这么一套面向组合的 API 开发模式.
 
+https://github.com/allmonday/pydantic-resolve
+
+https://github.com/allmonday/pydantic2-resolve
+
 ## 什么是面向组合的模式?
 
 在日常开发中, 为了获取复杂结构的数据, 我们常常会选择 client 多次请求后拼装, 或者在 service 中构建复杂查询来实现.
