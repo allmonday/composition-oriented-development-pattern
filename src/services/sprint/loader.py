@@ -9,6 +9,7 @@ async def batch_get_sprint_by_ids(session: AsyncSession, team_ids: list[int]):
     return users
 
 async def team_to_sprint_loader(team_ids: list[int]):
+    print(db.async_session)
     async with db.async_session() as session:
         sprints = await batch_get_sprint_by_ids(session, team_ids)
         return build_list(sprints, team_ids, lambda u: u.team_id)
