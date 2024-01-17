@@ -157,3 +157,4 @@ erDiagram
 - [挑选需要返回的字段](./src/router/sample_6/readme.md)
 - [反向拼装数据-wip](./src/router/sample_7/readme.md)
 - [用 service 测试代替 API 测试-wip](./src/services/sprint/readme.md)
+- [和 GraphQL 比较](./resolve-vs-graphql.md)
