@@ -9,7 +9,13 @@ import src.services.user.query as uq
 import src.services.story.query as sq
 import src.services.sprint.query as spq
 import src.services.team.query as tq
-from .schema import SprintToStoryLoader, TeamToSprintLoader, Sample7TeamDetail
+import src.services.task.query as tskq
+from .schema import (
+    SprintToStoryLoader,
+    TeamToSprintLoader,
+    UserLoader,
+    Sample7TeamDetail,
+    Sample7TaskDetail)
 
 route = APIRouter(tags=['sample_7'], prefix="/sample_7")
 
@@ -19,6 +25,25 @@ def add_to_loader(loader, items, get_key):
         _map[get_key(item)].append(item)
     for k, v in _map.items():
         loader.prime(k, v)
+
+def add_single_to_loader(loader, items, get_key):
+    _map = {}
+    for item in items:
+        _map[get_key(item)] = item
+    for k, v in _map.items():
+        loader.prime(k, v)
+
+@route.get('/tasks', response_model=list[Sample7TaskDetail])
+async def get_tasks(session: AsyncSession = Depends(db.get_session)):
+    users = await uq.get_users(session)
+    user_loader = UserLoader()
+    add_single_to_loader(user_loader, users, lambda u: u.id)
+
+    tasks = await tskq.get_tasks(session)
+    tasks = [Sample7TaskDetail.model_validate(t) for t in tasks]
+    tasks = await Resolver(loader_instances={UserLoader: user_loader}).resolve(tasks)
+    return tasks
+
 
 @route.get('/user/stat', response_model=list[Sample7TeamDetail])
 async def get_user_stat(session: AsyncSession = Depends(db.get_session)):
