@@ -1,53 +1,53 @@
-# 面向组合的 API 开发模式 [en](./en.md)
+# Composition-oriented API development model
 
-在构建关系型数据的 API 时, 面对层层嵌套的数据和随时变化的业务需求.
+[chinese](./readme-cn.md)
 
-是否存在一个兼顾灵活, 性能, 以及可维护的解决方案?
+When building an API for relational data, we are faced with layers of nested data and ever-changing business requirements.
 
-它应该能够支持以下功能:
+Is there a solution that combines flexibility, performance, and maintainability?
 
-- 支持异步
-- 支持定义多层的数据结构, **能够轻松扩展关联数据**
-- 全局参数, 局部参数
-- 提供每层`resolve` 完子孙数据后, 有个 hook 来操作数据的能力
-- 挑选所需的字段
-- 避免 N+1 查询相关的性能问题
-- 友好的错误提醒, 方便 debug
+It should be able to support the following features:
 
-本 repo 会通过一系列的例子, 通过`pydantic2-resolve` 和一些约定, 来实现这么一套面向组合的 API 开发模式.
+- Support asynchronous
+- Supports the definition of multi-layer data structures and can easily expand related data
+- global parameters, local parameters
+- Provides the ability for each layer resolve to have a hook to operate the data after completing the descendant data.
+- Pick the required fields
+- Avoid performance issues related to N+1 queries
+- debug Friendly error reminder, convenient for debugging
 
-https://github.com/allmonday/pydantic-resolve
+This repo will implement such a combination-oriented API development model through a series of examples, through pydantic2-resolve and some conventions.
 
-https://github.com/allmonday/pydantic2-resolve
+- https://github.com/allmonday/pydantic-resolve
+- https://github.com/allmonday/pydantic2-resolve
 
-## 什么是面向组合的模式?
+## What is composition-oriented pattern?
 
-在日常开发中, 为了获取复杂结构的数据, 我们常常会选择 client 多次请求后拼装, 或者在 service 中构建复杂查询来实现.
+In daily development, in order to obtain data with complex structures, we often choose to assemble the data after multiple requests from the client, or construct complex queries in the service.
 
-这时如果要求的数据发生了变化, 那么 client 或者 service 层的查询也要跟着调整.
+If the required data changes at this time, the query at the client or service layer will also need to be adjusted accordingly.
 
-这种变化污染了理想的分层设计, 把对业务的改动侵入到了 service 之中.
+This change pollutes the ideal layered design and intrudes changes to the business into the service.
 
-现在流行的思路是借助 graphql, 但整套方案的引入成本对后端来说并不低. 并且前端还需要手写 query 来描述字段, 没有直接 rpc-like 的请求体验顺畅. (rpc-like 可以参考 openapi + typescript-openapi-codegen)
+The current popular approach is to use GraphQL, but the introduction cost of the entire solution is not low for the backend. Additionally, the frontend needs to manually write queries to describe fields, which lacks the smooth experience of directly using RPC-like requests.
 
-面向组合的开发模式就是为了解决这个问题, 通过使用 `pydantic2-resolve` 让 router 层负责构建 schema 来封装变化, 从而避免 service 和 client 的改动.
+The combination-oriented development model is to solve this problem. By using pydantic2-resolve , the router layer is responsible for building the schema to encapsulate changes, thereby avoiding changes to service and client.
 
-在本 repo 的案例中, 有 services 和 routers 两个目录.
+In the case of this repo, there are two directories: services and routers.
 
-services 主要负责某一种业务服务的:
+Services are mainly responsible for a certain business service:
 
-- schema 定义
-- 业务 query (业务 root 数据的查询, 可以理解成还未拼装关联数据的主数据.)
-- dataloader (服务于数据拼装)
+- schema definition
+- Business query (query of business root data, can be understood as master data that has not yet assembled associated data.)
+- dataloader (serves data assembly)
 
-routers 则通过**组合**多个 service 的 query + (schema + loader) 来返回需要的数据.
+Routers return the required data by combining query + (schema + loader) of multiple services.
 
-这种组合方式可以实现通用服务和具体业务之间的自由组合, 从 service 简洁快速的构建出满足业务需求的 router/API.
+This composition approach enables the flexible combination of generic services with specific business logic, allowing the service to quickly and concisely construct routers/APIs that meet the requirements of the business.
 
 ![](./static/explain.png)
 
-比如下例中, `Sample1StoryDetail` 就是由多个 schema + loader 组成的.
-而 `Sample1StoryDetail` 继承的 Teams 数据由业务 query 来提供.
+For example, in the following example, Sample1StoryDetail is composed of multiple schemas + loaders. The Story data inherited by Sample1StoryDetail is provided by the business query.
 
 ```python
 from typing import Optional
@@ -90,7 +90,7 @@ async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session
     return stories
 ```
 
-## 执行代码
+## Run code
 
 ```shell
 python -m venv venv
@@ -100,13 +100,13 @@ uvicorn src.main:app --port=8000 --reload
 # http://localhost:8000/docs
 ```
 
-可以在 swagger 中执行查看每个 API 的返回值
+You can execute it in swagger to view the return value of each API
 
-## 搭建 Mini JIRA API
+## Building mini JIRA API
 
-让我们从一个 mini-jira 系统开始.
+Let's start with a mini-jira system.
 
-`mini-jira` 有这么些实体概念，分配到了各个 service 中。
+`mini-jira` There are so many entity concepts allocated to each service.
 
 ```mermaid
 ---
@@ -147,14 +147,14 @@ erDiagram
     }
 ```
 
-## 功能介绍
+## Features
 
-- [多层嵌套结构的构建](./src/router/sample_1/readme.md)
-- [Loader 中对数据过滤](./src/router/sample_2/readme.md)
-- [将字段暴露给子孙节点](./src/router/sample_3/readme.md)
-- [resolve 结束后, 对获取数据的后处理](./src/router/sample_4/readme.md)
-- [Loader 的复用](./src/router/sample_5/readme.md)
-- [挑选需要返回的字段](./src/router/sample_6/readme.md)
-- [反向拼装数据-wip](./src/router/sample_7/readme.md)
-- [用 service 测试代替 API 测试-wip](./src/services/sprint/readme.md)
-- [和 GraphQL 比较](./resolve-vs-graphql.md)
+- [Construction of multi-layer nested structures](./src/router/sample_1/readme.md)
+- [Data filtering in Loader](./src/router/sample_2/readme.md)
+- [Expose fields to descendant nodes](./src/router/sample_3/readme.md)
+- [After resolved, post-processing of obtaining data](./src/router/sample_4/readme.md)
+- [Loader reuse](./src/router/sample_5/readme.md)
+- [Select the fields to be returned](./src/router/sample_6/readme.md)
+- [Loader instance](./src/router/sample_7/readme.md)
+- [Use service testing instead of API testing-wip](./src/services/sprint/readme.md)
+- [Compare to GraphQL](./resolve-vs-graphql.md)
