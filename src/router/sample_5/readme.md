@@ -1,23 +1,23 @@
-## Loader 的复用
+## Loader reuses
 
-进入 `sample_5`
+Enter sample_5
 
-在前面的例子中,我们返回的始终是一个数组, 如果往上想一层, 我定义一个 schema, 这个 schema 包含了一个页面所需要的所有数据, 那会是怎么样?
+In the previous example, what we returned was always an array. If we think about it one level higher, what would happen if I defined a schema that contains all the data needed for a page?
 
-动手来试一下, 假设页面要展示 summary 和 teams 信息:
+Let’s try it out, assuming the page wants to display summary and teams information:
 
 ```python
 class Sample5Root(BaseModel):
     summary: str
 
-    teams: list[Sample5TeamDetail] = [] 
+    teams: list[Sample5TeamDetail] = []
     async def resolve_teams(self):
         async with db.async_session() as session:
             teams = await tmq.get_teams(session)
             return teams
 ```
 
-可以看到, 只要把原先 router 中的 query 搬到schema 里面就好了. so easy. 甚至手动做数据转换的步骤都省略了, 因为 Resolver 会自己做转换.
+As you can see, just move the query in the original router to the schema. So easy. Even the steps of manual data conversion are omitted, because Resolver will do the conversion by itself.
 
 ```python
 @route.get('/page-info', response_model=Sample5Root)
@@ -27,14 +27,13 @@ async def get_page_info(session: AsyncSession = Depends(db.get_session)):
     return page
 ```
 
-router 里面只要初始化一下, 剩下的交给 Resolver 就好了.
+The router only needs to be initialized and the Resolver will do the rest.
 
-> 到这里, 你也许会发现, 定义schema 的过程和使用 GraphQL 手写查询体的体验是很相似的, 区别是 Resolver 处理的 schema 还需要自己选择 loader 和 schema. 配置多了点, 但是自由度和功能多了许多.
+> At this point, you may find that the process of defining a schema is very similar to the experience of using a GraphQL handwritten query. The difference is that the schema processed by the Resolver requires you to choose the loader and schema yourself. There is a little more configuration, but there is more freedom and functionality. A lot.
 >
-> 一个小的最佳实践: resolve_method 中不要自己写业务查询逻辑, 要调用 servcie 中封装好的 query 方法. 这样可以保持 schema 的简洁和拼装的清晰. schema 中要么调用 query, 要么调用loader, 用配置的思考方式来定义 schema.
+> A small best practice: Do not write your own business query logic in resolve_method, but call the query method encapsulated in servcie. This can keep the schema concise and the assembly clear. In the schema, either call query or loader, use the configured Think about the way you define a schema.
 
-让我们更进一步, 让 router 可以接收一个 `team_id` 参数, 然后teams 变成 team, 这时就可以通过 context 来传递参数了.
-context 是一个保留参数, 在所有 resolve 和 post 方法中都可以使用它来获取 Resolver 中定义的参数.
+Let's go one step further and allow the router to receive a team_id parameter, and then teams becomes team. At this time, parameters can be passed through context. context is a reserved parameter that is used in all resolve and post methods. This can be used to obtain parameters defined in the Resolver.
 
 ```python
 # router
@@ -48,10 +47,9 @@ async def get_page_info(team_id: int, session: AsyncSession = Depends(db.get_ses
 class Sample5Root(BaseModel):
     summary: str
 
-    team: Optional[Sample5TeamDetail] = None 
+    team: Optional[Sample5TeamDetail] = None
     async def resolve_team(self, context):
         async with db.async_session() as session:
             team = await tmq.get_team_by_id(session, context['team_id'])
             return team
 ```
-

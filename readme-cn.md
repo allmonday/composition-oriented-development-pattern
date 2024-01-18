@@ -148,12 +148,12 @@ erDiagram
 
 ## 功能介绍
 
-- [多层嵌套结构的构建](./src/router/sample_1/readme.md)
-- [Loader 中对数据过滤](./src/router/sample_2/readme.md)
-- [将字段暴露给子孙节点](./src/router/sample_3/readme.md)
-- [resolve 结束后, 对获取数据的后处理](./src/router/sample_4/readme.md)
-- [Loader 的复用](./src/router/sample_5/readme.md)
-- [挑选需要返回的字段](./src/router/sample_6/readme.md)
-- [操作 Loader 实例](./src/router/sample_7/readme.md)
-- [用 service 测试代替 API 测试-wip](./src/services/sprint/readme.md)
-- [和 GraphQL 比较](./resolve-vs-graphql.md)
+- [多层嵌套结构的构建](./src/router/sample_1/readme-cn.md)
+- [Loader 中对数据过滤](./src/router/sample_2/readme-cn.md)
+- [将字段暴露给子孙节点](./src/router/sample_3/readme-cn.md)
+- [resolve 结束后, 对获取数据的后处理](./src/router/sample_4/readme-cn.md)
+- [Loader 的复用](./src/router/sample_5/readme-cn.md)
+- [挑选需要返回的字段](./src/router/sample_6/readme-cn.md)
+- [操作 Loader 实例](./src/router/sample_7/readme-cn.md)
+- [用 service 测试代替 API 测试-wip](./src/services/sprint/readme-cn.md)
+- [和 GraphQL 比较](./resolve-vs-graphql-cn.md)

@@ -1,14 +1,14 @@
 ### Expose
 
-Enter sample_3 .
+进入 `sample_3`.
 
-In the second case, I want task to have another full_name field, which directly contains the prefixes of all levels. For example, team_a -> sprint_a -> story_a -> task_a, then the full_name of task_a is `team_a/sprint_a/story_a/task_a`
+第二种情况, 我想让 task 又一个 full_name 字段, 直接包含所有层级的前缀. 比如 team_a -> sprint_a -> story_a -> task_a, 那么 task_a 的 full_name就是 `team_a/sprint_a/story_a/task_a`
 
-Schema can use `__pydantic_resolve_expose__ = {'name': 'team_name'}` to alias one of its fields and then expose it to all its descendant nodes.
+schema 可以通过 `__pydantic_resolve_expose__ = {'name': 'team_name'}` 这样的方式, 给自己的某个字段取别名, 然后暴露给自己所有的子孙节点.
 
-> The alias needs to be globally (entire Resolve scope) unique.
+> 别名需要保证全局 (整个Resolve scope) 唯一.
 
-n turn, at any descendant node, the value of the direct ancestor's name field can be read through the ancestor_context parameter.
+反过来在任意子孙节点, 都能够通过 ancestor_context 参数, 来读取到直接祖先的 `name` 字段的值.
 
 ```python
 class Sample3TeamDetail(tms.Team):

@@ -1,12 +1,12 @@
-## 挑选所需的字段
+## Pick the required fields
 
-进入 `sample_6`
+Enter `sample_6`
 
-既然提到了 GraphQL, 在查询体中可以选择需要的字段, 那么在 Resolver里面怎么做呢? 以 Sprint为例, 我不想让 status 字段显示出来.
+Now that GraphQL is mentioned, you can select the required fields in the query body, so how do you do it in Resolver? Taking Sprint as an example, I don't want the status field to be displayed.
 
-需要分两步, 第一步是去拷贝一下 Sprint 里面要的字段, 第二步是添加 `@ensure_subset` 装饰器, 它会检查字段是否和 Sprint 中的名字,类型一致 (避免修改了 Sprint 之后, 其他复制的字段出现不一致, 这样就会给出错误提醒. )
+It needs to be divided into two steps. The first step is to copy the fields required in Sprint. The second step is to add the `@ensure_subset` decorator. It will check whether the field is consistent with the name and type in Sprint (to avoid modification After Sprint, if other copied fields are inconsistent, an error reminder will be given.)
 
-> 当前的实现要手动复制字段还是有点啰嗦的, 下个阶段计划只需要在装饰器中提供字段名字列表.
+> The current implementation is a bit cumbersome to manually copy fields. In the next stage, we plan to only provide a list of field names in the decorator.
 
 ```python
 @ensure_subset(sps.Sprint)
