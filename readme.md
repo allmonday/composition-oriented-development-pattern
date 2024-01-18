@@ -1,4 +1,4 @@
-# Composition-oriented API development model
+# Composition-oriented pattern for API development
 
 [chinese](./readme-cn.md)
 
