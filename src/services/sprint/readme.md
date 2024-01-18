@@ -1,16 +1,16 @@
-## service 的测试
+## Test of service
 
-可以看到该目录下有两个测试文件
+You can see that there are two test files in this directory
 
 - `test_loader.py`
 - `test_query.py`
 
-这两个文件构成了 service integration test 的基础。
+These two files form the basis of the service integration test.
 
-只要保证所有的 query 和 loader 的测试正确，那么 router 层基于他们拼接的 schema 对象就是稳定可靠的。
+As long as all queries and loaders are tested correctly, the router layer will be stable and reliable based on the schema objects they splice together.
 
-于是，router 层的 API 测试就没有必要了。
+Therefore, API testing at the router layer is not that necessary.
 
-> 除非你在 router 层又写了容易出错的额外代码
+> Unless you write additional error-prone code in the router layer
 >
-> 如果存在， 请对其单独进行测试覆盖。
+> If present, perform separate test coverage on it.
