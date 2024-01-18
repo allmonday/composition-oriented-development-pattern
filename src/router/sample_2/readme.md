@@ -4,8 +4,6 @@ Enter sample_2 .
 
 Consider a scenario where you need to list the members of the team whose level is senior (or other value), then the loader needs to provide a means to add filter conditions.
 
-我们可以这么做, 在 `src.services.user.loader` 中添加 `UserByLevelLoader`, 它有一个类属性 `level`. 在初始化 loader 之后, 通过设置 `self.level` 就能实现功能, 现在问题是怎么为 `self.level` 赋值.
-
 We can do this by adding UserByLevelLoader in `src.services.user.loader`, which has a class attribute level . After initializing the loader, set `self.level`. The function can be realized. Now the question is how to assign a value to `self.level`.
 
 > The filter field value of a loader instance is immutable. Different filter combinations need to correspond to their respective loader instances.
