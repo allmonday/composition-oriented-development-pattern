@@ -16,7 +16,7 @@ It should be able to support the following features:
 - Avoid performance issues related to N+1 queries
 - debug Friendly error reminder, convenient for debugging
 
-This repo will implement such a combination-oriented API development model through a series of examples, through pydantic2-resolve and some conventions.
+This repo will implement such a combination-oriented API development pattern through a series of examples, through pydantic2-resolve and some conventions.
 
 - https://github.com/allmonday/pydantic-resolve
 - https://github.com/allmonday/pydantic2-resolve
@@ -31,19 +31,23 @@ This change pollutes the ideal layered design and intrudes changes to the busine
 
 The current popular approach is to use GraphQL, but the introduction cost of the entire solution is not low for the backend. Additionally, the frontend needs to manually write queries to describe fields, which lacks the smooth experience of directly using RPC-like requests.
 
-The combination-oriented development model is to solve this problem. By using pydantic2-resolve , the router layer is responsible for building the schema to encapsulate changes, thereby avoiding changes to service and client.
+The combination-oriented development pattern is to solve this problem. By using pydantic2-resolve , the router layer is responsible for building the schema to encapsulate changes, thereby avoiding changes to service and client.
 
-In the case of this repo, there are two directories: services and routers.
+In the case of this repo, there are two directories: services and routers(controller).
 
-Services are mainly responsible for a certain business service:
+`Services` are mainly responsible for a certain business service:
 
-- schema definition
+- Schema definition
 - Business query (query of business root data, can be understood as master data that has not yet assembled associated data.)
 - dataloader (serves data assembly)
 
-Routers return the required data by combining query + (schema + loader) of multiple services.
+`Routers` return the required data by combining `[query, schema, loader]` from multiple services.
 
-This composition approach enables the flexible combination of generic services with specific business logic, allowing the service to quickly and concisely construct routers/APIs that meet the requirements of the business.
+> The concept router here is mostly like `controller`, handling the composition of schemas is it's core function
+>
+> This demo is based on FastAPI, so I'll call it router instead.
+
+This composition approach enables the flexible combination of generic services with specific business logic, allowing the service to quickly and concisely construct routers/APIs that meet the requirements of the business, and keeps services stable at the same time.
 
 ![](./static/explain.png)
 
@@ -84,9 +88,13 @@ class Sample1StoryDetail(ss.Story):
 # query
 @route.get('/stories-with-detail', response_model=List[Sample1StoryDetail])
 async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session)):
+    # fetching root data from query
     stories = await sq.get_stories(session)
+    # load it into Resolvable schema
     stories = [Sample1StoryDetail.model_validate(t) for t in stories]
+    # resolve it
     stories = await Resolver().resolve(stories)
+    # done
     return stories
 ```
 
@@ -104,9 +112,7 @@ You can execute it in swagger to view the return value of each API
 
 ## Building mini JIRA API
 
-Let's start with a mini-jira system.
-
-`mini-jira` There are so many entity concepts allocated to each service.
+Let's start with a mini-jira system. (ERD)
 
 ```mermaid
 ---
