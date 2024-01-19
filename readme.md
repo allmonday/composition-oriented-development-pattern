@@ -2,21 +2,21 @@
 
 [chinese](./readme-cn.md)
 
-When building an API for relational data, we are faced with layers of nested data and ever-changing business requirements.
+When building APIs for relational data, we are always faced with layers of nested data and ever-changing business requirements.
 
 Is there a solution that combines flexibility, performance, and maintainability?
 
-It should be able to support the following features:
+This solution should support the following features:
 
-- Support asynchronous
-- Supports the definition of multi-layer data structures and can easily expand related data
-- global parameters, local parameters
-- Provides the ability for each layer resolve to have a hook to operate the data after completing the descendant data.
+- asynchronous
+- The definition of multi-layer data structures and can easily expand related data
+- global context, scoped context
+- The ability for each layer to have a hook to operate the data after the descendant data are resolved
 - Pick the required fields
-- Avoid performance issues related to N+1 queries
-- debug Friendly error reminder, convenient for debugging
+- Avoid N+1 queries
+- Convenient for debugging
 
-This repo will implement such a combination-oriented API development pattern through a series of examples, through pydantic2-resolve and some conventions.
+This repo will implement such a solution through a series of examples, with pydantic2-resolve and some conventions.
 
 - https://github.com/allmonday/pydantic-resolve
 - https://github.com/allmonday/pydantic2-resolve
@@ -25,21 +25,27 @@ This repo will implement such a combination-oriented API development pattern thr
 
 In daily development, in order to obtain data with complex structures, we often choose to assemble the data after multiple requests from the client, or construct complex queries in the service.
 
-If the required data changes at this time, the query at the client or service layer will also need to be adjusted accordingly.
+If requirements changes, the query at the client or service layer will also need to be adjusted accordingly.
 
-This change pollutes the ideal layered design and intrudes changes to the business into the service.
+This change pollutes the ideal layered design and make changes happen in the service/client.
 
-The current popular approach is to use GraphQL, but the introduction cost of the entire solution is not low for the backend. Additionally, the frontend needs to manually write queries to describe fields, which lacks the smooth experience of directly using RPC-like requests.
+The current popular approach is using GraphQL, but the introduction cost of the entire solution is not low for the backend. Additionally, the frontend needs to manually write queries to describe fields, which lacks the smooth experience of directly using RPC-like requests.
 
-The combination-oriented development pattern is to solve this problem. By using pydantic2-resolve , the router layer is responsible for building the schema to encapsulate changes, thereby avoiding changes to service and client.
+The combination-oriented development pattern is to solve this problem.
 
-In the case of this repo, there are two directories: services and routers(controller).
+By using pydantic2-resolve, and some conventions.
 
-`Services` are mainly responsible for a certain business service:
+The `router layer` is responsible for building the schema to encapsulate changes, thereby avoiding changes in service and client.
+
+In the cases of this repo, there are two directories:
+
+`Services` and `Routers`.
+
+`Services` are mainly responsible for a certain business service, it includes:
 
 - Schema definition
-- Business query (query of business root data, can be understood as master data that has not yet assembled associated data.)
-- dataloader (serves data assembly)
+- Business query
+- Dataloaders
 
 `Routers` return the required data by combining `[query, schema, loader]` from multiple services.
 
@@ -47,11 +53,11 @@ In the case of this repo, there are two directories: services and routers(contro
 >
 > This demo is based on FastAPI, so I'll call it router instead.
 
-This composition approach enables the flexible combination of generic services with specific business logic, allowing the service to quickly and concisely construct routers/APIs that meet the requirements of the business, and keeps services stable at the same time.
+This composition approach enables the flexible combination of generic services with specific business logic, allowing the service to quickly and concisely construct routers/APIs that meet the requirements of the business, and keeps services stable (unchanged) at the same time.
 
 ![](./static/explain.png)
 
-For example, in the following example, Sample1StoryDetail is composed of multiple schemas + loaders. The Story data inherited by Sample1StoryDetail is provided by the business query.
+For example, in the following example, `Sample1StoryDetail` is composed of multiple schemas + loaders. The Story data inherited by `Sample1StoryDetail` is provided by the business query.
 
 ```python
 from typing import Optional
@@ -153,14 +159,14 @@ erDiagram
     }
 ```
 
-## Features
+## Features & Scenarios
 
 - [Construction of multi-layer nested structures](./src/router/sample_1/readme.md)
 - [Data filtering in Loader](./src/router/sample_2/readme.md)
-- [Expose fields to descendant nodes](./src/router/sample_3/readme.md)
+- [Exposing fields to descendant nodes](./src/router/sample_3/readme.md)
 - [After resolved, post-processing of obtaining data](./src/router/sample_4/readme.md)
-- [Loader reuse](./src/router/sample_5/readme.md)
-- [Select the fields to be returned](./src/router/sample_6/readme.md)
+- [Reuse of Loaders](./src/router/sample_5/readme.md)
+- [Picking the fields to be returned](./src/router/sample_6/readme.md)
 - [Loader instance](./src/router/sample_7/readme.md)
-- [Use service testing instead of API testing-wip](./src/services/sprint/readme.md)
+- [Service testing is enough](./src/services/sprint/readme.md)
 - [Compare to GraphQL](./resolve-vs-graphql.md)
