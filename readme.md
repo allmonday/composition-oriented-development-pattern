@@ -2,6 +2,8 @@
 
 [chinese](./readme-cn.md)
 
+[discord](https://discord.com/channels/1197929379951558797/1197929379951558800)
+
 When building APIs for relational data, we are always faced with layers of nested data and ever-changing business requirements.
 
 Is there a solution that combines flexibility, performance, and maintainability?
