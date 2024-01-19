@@ -8,9 +8,9 @@ Is there a solution that combines flexibility, performance, and maintainability?
 
 This solution should support the following features:
 
-- asynchronous
+- Asynchronous
 - The definition of multi-layer data structures and can easily expand related data
-- global context, scoped context
+- Global context, scoped context
 - The ability for each layer to have a hook to operate the data after the descendant data are resolved
 - Pick the required fields
 - Avoid N+1 queries
