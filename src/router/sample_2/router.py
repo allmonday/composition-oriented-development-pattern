@@ -23,7 +23,7 @@ async def get_teams_with_detail(session: AsyncSession = Depends(db.get_session))
     return teams
 
 
-@route.get('/teams-with-detail-of-multiple-level', response_model=List[Sample2TeamDetail])
+@route.get('/teams-with-detail-of-multiple-level', response_model=List[Sample2TeamDetailMultipleLevel])
 async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depends(db.get_session)):
     """1.2 teams with senior and junior members"""
     teams = await tmq.get_teams(session)

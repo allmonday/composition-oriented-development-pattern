@@ -60,6 +60,14 @@ class Sample2TeamDetailMultipleLevel(tms.Team):
     def resolve_junior_members(self, loader=LoaderDepend(JuniorMemberLoader)):
         return loader.load(self.id)
 
+    senior_junior: List[us.User] = []
+    async def resolve_senior_junior(self,
+                                    loader_j=LoaderDepend(JuniorMemberLoader),
+                                    loader_s=LoaderDepend(SeniorMemberLoader)
+                                    ):
+        return await loader_j.load(self.id) + await loader_s.load(self.id)
+
+
 # router.py
 @route.get('/teams-with-detail-of-multiple-level', response_model=List[Sample2TeamDetail])
 async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depends(db.get_session)):
@@ -76,3 +84,5 @@ async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depend
     }).resolve(teams)
     return teams
 ```
+
+btw, you can also use multiple loaders at the same time.
