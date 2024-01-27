@@ -167,11 +167,16 @@ class Sample1TeamDetail2(tms.Team):
         return loader.load(self.id)
 ```
 
+> `resolve_method` 并不需要从顶层 class 就开始定义. `Resolver` 会递归遍历然后找到`resolver_method` 进行解析.
+> 
+> pydantic-resolve 不会去处理 ORM model 和 schema 直接是否统一声明的问题, 因为 ORM 层面向的持久层和pydantic schema 面向的业务层并不能保证始终一致.
+
+
 ## Dataloader 的使用
 
 Dataloader 的作用收集完所有要查询的 parent_ids 之后，一次性查询到所有的 childrent 对象，接着根据 child 的 parent_id 聚合起来。
 
-数据关系可能有 1:1, 1:N, M:N, 从 parent 角度看的话，就会只有 1:1 和 1:N 两种。 对应这两种情况，`pydantic2-resolve` 提供了两个辅助函数
+数据关系从 parent 角度看的话，有 1:1 和 1:N 两种。 对应这两种情况，`pydantic2-resolve` 提供了两个辅助函数
 
 ```python
 from pydantic2_resolve import build_list, build_object
@@ -191,11 +196,11 @@ async def team_to_sprint_loader(team_ids: list[int]):
 
 可以看到 1:1 的关系查询 id 是目标的主键， 查询非常简单, 因此可复用性最高。
 
-而 1:N 的查询需要有对应的关系表来确定，所以复用情况受限于 parent 类型。
+而 1:N 的查询需要有对应的关系表 (parent_id -> id) 来确定，所以复用情况取决于 parent_id。
 
 ### 1:1
 
-用 story 举例， `story.owner_id` 指定了一个 story 的负责人， 如果需要把 user 信息添加到 story, 则只需直接复用 `user_batch_loader` 方法。
+用 story 举例， `story.owner_id` 指定了一个 story 的负责人， 如果需要把 user 信息添加到 story, 则只需直接使用 `user_batch_loader` 方法。
 
 ```python
 class Sample1StoryDetail(ss.Story):
@@ -208,14 +213,12 @@ class Sample1StoryDetail(ss.Story):
         return loader.load(self.owner_id)
 ```
 
-可以在 swagger 中查看输出。
-
 ### 1:N
 
 以 teams 举例， team_user 表维护了 team 和 user 之间的关系。
 所以我们的 loader 需要 join team_user 来查询 user.
 
-因此这种类型的 dataloader 的复用是跟着 parent 类型走的.
+因此这种类型的 dataloader 的复用是跟着 parent 走的.
 
 ```python
 # team -> user query
@@ -250,6 +253,20 @@ class Sample1TeamDetail(tms.Team):
         return loader.load(self.id)
 ```
 
-> 顺便一提, `resolve_method` 并不需要从顶层 class 就开始定义. `Resolver` 会递归遍历然后找到`resolver_method` 进行解析.
+至此， Dataloader 的使用就介绍玩了.
 
-至此， Dataloader 的复用性就介绍完了。
+
+## 其他想法
+
+对于使用过 `graphene` 或者 `strawberry` 之类 graphql 框架的开发, dataloader 是一个很熟悉的东西.
+
+在GraphQL 的模式下, 添加loader 需要将所有要使用的 loader 放到一个公共 context 里面, 这个问题受制于 GraphQL 单一入口, 所以没有好的解决方法.
+ 
+- https://github.com/syrusakbary/aiodataloader?tab=readme-ov-file#creating-a-new-dataloader-per-request
+- https://strawberry.rocks/docs/guides/dataloaders#usage-with-context
+
+这间接导致, 如果一个 loader 在多处被使用了, 那么对这个loader 的修改就会很困难. ( 因为 Query 太全能, 一个系统被全局关联了, 反而导致修改很困难 )
+
+因此 `pydantic-resolve` 利用 Resolver 提供的单独入口, 实现了通过 `LoaderDepend` 就近申明 loader 的功能
+
+这样一来 Resolver 就能按需来生成各个 loader 实例. 于是 loader 之间的替换修改就非常容易. 而且也不用把所有 loader 往一个 context 里面放了.
