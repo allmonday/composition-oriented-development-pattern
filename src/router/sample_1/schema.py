@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic2_resolve import LoaderDepend
+from pydantic import ConfigDict
 
 import src.services.task.loader as tl
 import src.services.user.loader as ul
@@ -36,6 +37,13 @@ class Sample1TeamDetail(tms.Team):
     sprints: list[Sample1SprintDetail] = []
     def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
         return loader.load(self.id)
+    
+    members: list[us.User] = []
+    def resolve_members(self, loader=LoaderDepend(ul.team_to_user_loader)):
+        return loader.load(self.id)
+
+class Sample1TeamDetail2(tms.Team):
+    sprints: list[Sample1SprintDetail] = []
     
     members: list[us.User] = []
     def resolve_members(self, loader=LoaderDepend(ul.team_to_user_loader)):

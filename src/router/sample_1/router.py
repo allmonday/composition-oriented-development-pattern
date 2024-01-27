@@ -14,7 +14,12 @@ import src.services.story.query as sq
 import src.services.sprint.query as spq
 import src.services.team.query as tmq
 
-from .schema import Sample1TaskDetail, Sample1StoryDetail, Sample1SprintDetail, Sample1TeamDetail
+from .schema import (
+    Sample1TaskDetail,
+    Sample1StoryDetail,
+    Sample1SprintDetail,
+    Sample1TeamDetail,
+    Sample1TeamDetail2)
 
 route = APIRouter(tags=['sample_1'], prefix="/sample_1")
 
@@ -62,5 +67,37 @@ async def get_teams_with_detail(session: AsyncSession = Depends(db.get_session))
     """ 1.6 return list of team(sprint(story(task(user)))) """
     teams = await tmq.get_teams(session)
     teams = [Sample1TeamDetail.model_validate(t) for t in teams]
+    teams = await Resolver().resolve(teams)
+    return teams
+
+
+@route.get('/teams-with-detail2', response_model=List[Sample1TeamDetail2])
+async def get_teams_with_detail_2(session: AsyncSession = Depends(db.get_session)):
+    """ 1.7 return list of team(sprint(story(task(user)))) """
+    teams = [{
+        "id": 1,
+        "name": "team-A",
+        "sprints": [
+            {
+                "id": 1,
+                "name": "Sprint A W1",
+                "status": "close",
+                "team_id": 1
+            },
+            {
+                "id": 2,
+                "name": "Sprint A W3",
+                "status": "active",
+                "team_id": 1
+            },
+            {
+                "id": 3,
+                "name": "Sprint A W5",
+                "status": "plan",
+                "team_id": 1
+            }
+        ]
+    }]
+    teams = [Sample1TeamDetail2.model_validate(t) for t in teams]
     teams = await Resolver().resolve(teams)
     return teams

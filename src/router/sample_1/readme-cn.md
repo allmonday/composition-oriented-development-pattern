@@ -1,19 +1,13 @@
-作为开始, 我们会一步步开始, 返回单层 task 列表的 API 逐渐过渡到返回多层 Teams 列表 API.
+作为开始, 我们会一步步开始, 从返回单层 task 列表逐渐过渡到返回多层 Teams 列表.
 
-To begin, we will start step by step, transitioning from an API that returns a single-layer task list to an API that returns a multi-layer Teams list.
+## 简单列表
 
-## 简单列表 Simple list
-
-对应的路由:
-
-routers:
+路由:
 
 - `sample_1.router:get_users`
 - `sample_1.router:get_tasks`
 
 在`src.router.sample_1` 中，我们依次创建 users, tasks 的 API， 以 list[T] 的形式返回。
-
-In `src.router.sample_1`, we will sequentially create APIs for users and tasks, returning them in the form of list[T].
 
 ```python
 import src.services.task.query as tq
@@ -26,15 +20,20 @@ async def get_step_1_tasks(session: AsyncSession = Depends(db.get_session)):
 
 通过引入 `src.services.user.query` 和 `src.services.task.query` 中的查询,返回了 `list[orm]` 对象, 然后 FastAPI 会自动将对象转成 response_model 中对应的类型.
 
-by importing queries from `src.services.user.query` and `src.services.task.query`, we can get `list[orm]`, and then FastAPI will automatically convert the objects into the corresponding types defined in response_model
+访问 
+- `http://localhost:8000/sample_1/users`
+- `http://localhost:8000/sample_1/tasks`
 
-## 嵌套列表
 
-接下来我们要将将 user 信息添加到 task 中, 在 sample_1 目录下创建 `schema.py`, 定义一个扩展了 user 信息的 `Sample1TaskDetail` 类型.
+## 构建嵌套列表
 
-> 为了避免类型名字重复,使用 router 名字作为前缀
+接下来我们要将将 user 信息添加到 task 中, 在 sample_1 目录下创建 `schema.py`.
+
+然后定义一个扩展了 user 信息的 `Sample1TaskDetail` 类型.
+
+> 为了避免类型名字重复, 使用 router 名字作为前缀
 >
-> 因此 Sample1 开头的 schema 都是属于 sample_1 路由的 (这点在生成前端 sdk ts 类型的时候会很有用.)
+> 因此 Sample1 开头的 schema 都是属于 sample_1 路由的 (这点在生成前端 sdk ts 类型的时候将会很有用.)
 
 ```python
 class Sample1TaskDetail(ts.Task):
@@ -49,11 +48,13 @@ class Sample1TaskDetail(ts.Task):
 2. 定义 user 需要添加默认值, 否则用 `Sample1TaskDetail.model_valiate` 会报缺少字段错误.
 3. `ul.user_batch_loader` 会根据 `list[task.owner_id]` 来关联 task 和 user 对象. 具体看 `src.services.user.loader`
 
+loader 的作用是提前收集好所有task需要查询的 `task.owner_id`, 一次性查询完之后赋值给各自的 task
+
 > resolve 返回的数据需要是 pydantic 可以转化的类型.
 >
 > 如果是 orm 对象需要配置 `ConfigDict(from_attribute=True)`
 
-在 `router.py` 中, 依然是通过 `tq.get_tasks(session)` 来获取初始数据, 接着转换成 `Sample1TaskDetail`. 之后交给 `Resolver` 就能 resolve 出所有 user 信息.
+然后在 `router.py` 中, 依然是通过 `tq.get_tasks(session)` 来获取初始数据, 接着转换成 `Sample1TaskDetail`. 之后交给 `Resolver` 就能 resolve 出所有 user 信息.
 
 ```python
 @route.get('/tasks-with-detail', response_model=List[Sample1TaskDetail])
@@ -64,6 +65,38 @@ async def get_tasks_with_detail(session: AsyncSession = Depends(db.get_session))
     tasks = await Resolver().resolve(tasks)
     return tasks
 ```
+
+访问:
+- `http://localhost:8000/sample_1/tasks-with-detail`
+
+可以看到 user 信息被添加了进来.
+```json
+[
+    {
+        "id": 1,
+        "name": "mvp tech design",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+            "id": 2,
+            "name": "Eric",
+            "level": "junior"
+        }
+    },
+    {
+        "id": 2,
+        "name": "implementation",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+            "id": 2,
+            "name": "Eric",
+            "level": "junior"
+        }
+    }
+]
+```
+
 
 ## 多层嵌套列表
 
@@ -86,6 +119,51 @@ class Sample1SprintDetail(sps.Sprint):
 class Sample1TeamDetail(tms.Team):
     sprints: list[Sample1SprintDetail] = []
     def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
+        return loader.load(self.id)
+```
+
+访问: `http://localhost:8000/sample_1/teams-with-detail`
+
+
+`get_teams_with_detail_2` 描述了另一种场景, 假如我们利用了一些 ORM 的外键查询, 提前获取到了 team + sprints 级别的数据, 拿我可以在这个数据的基础上继续 resolve.
+
+输入数据:
+
+```python
+teams = [{
+    "id": 1,
+    "name": "team-A",
+    "sprints": [
+        {
+            "id": 1,
+            "name": "Sprint A W1",
+            "status": "close",
+            "team_id": 1
+        },
+        {
+            "id": 2,
+            "name": "Sprint A W3",
+            "status": "active",
+            "team_id": 1
+        },
+        {
+            "id": 3,
+            "name": "Sprint A W5",
+            "status": "plan",
+            "team_id": 1
+        }
+    ]
+}]
+```
+
+转换类型, 可以看到此处没有了 `resolve_sprints`. 但 sprints 数据转换成 `Simple1SprintDetail` 类型之后, 会自动继续扩展获取定义的关联类型.
+
+```python
+class Sample1TeamDetail2(tms.Team):
+    sprints: list[Sample1SprintDetail] = []
+    
+    members: list[us.User] = []
+    def resolve_members(self, loader=LoaderDepend(ul.team_to_user_loader)):
         return loader.load(self.id)
 ```
 
