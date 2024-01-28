@@ -26,7 +26,7 @@ class Sample6StoryDetail(ss.Story):
     def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
         return loader.load(self.id)
     
-@ensure_subset(sps.Sprint)
+@ensure_subset(sps.Sprint)  # pick what you want.
 class Sample6SprintDetail(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

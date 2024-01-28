@@ -2,15 +2,16 @@
 
 通常情况下 loader instance 是由 Resolver 内部实例化并且维护的。
 
-如果你已经有一个 loader， 并且这个 loader 已经通过 `prime` 方法添加过了数据的话， 那么可以使用 `loader_instance` 参数传入， 让 Resolver 内部跳过初始化过程， 直接使用传进来的 loader 实例。
+如果你已经有一个 loader，并且这个 loader 已经通过 `prime` 方法添加过了数据的话， 那么可以使用 `loader_instance` 参数传入，让 Resolver内部跳过初始化过程， 直接使用传进来的 loader 实例。
 
 以 UserLoader 为例子， 可以使用一个真实可用的 loader `src.service.user.loader:user_batch_loader`，也可以使用 `generate_single_empty_loader` 来生成一个 Loader 类。
 
-两者的区别在于， 如果`loader.load(key)` 传入的数据如果不在 loader cache 中， 会触发 `batch_load_fn` 进行查询， 而 `generate_single_empty_loader` 则不会做任何事情，如果不存在就返回 `None`
+两者的区别在于， 如果`loader.load(key)` 传入的数据如果不在 loader cache 中， 会触发 `batch_load_fn` 进行查询
+
+`generate_single_empty_loader` 内置的 `batch_load_fn` 不会做任何事情，如果不存在就返回 `None`
 
 > generate_list_empty_loader 默认返回 []
 
-schema
 
 ```python
 UserLoader = generate_single_empty_loader('UserLoader')
@@ -22,9 +23,10 @@ class Sample7TaskDetail(ts.Task):
 ```
 
 router 中使用 `add_single_to_loader` 来处理 `prime` 逻辑
+
 模拟预先获取 users 信息， 然后加入 loader, 再提供给 `Sample7TaskDetail` 使用。
 
-如果注释 `add_single_to_loader`方法， 会发现所有的 user 都是 None
+> 如果注释 `add_single_to_loader`方法， 会发现所有的 user 都是 None
 
 ```python
 def add_single_to_loader(loader, items, get_key):
@@ -36,12 +38,14 @@ def add_single_to_loader(loader, items, get_key):
 
 @route.get('/tasks', response_model=list[Sample7TaskDetail])
 async def get_tasks(session: AsyncSession = Depends(db.get_session)):
-    users = await uq.get_users(session)
+    # 初始化 loader, 提前加载所有数据 
     user_loader = UserLoader()
+    users = await uq.get_users(session)
     add_single_to_loader(user_loader, users, lambda u: u.id)
 
     tasks = await tskq.get_tasks(session)
     tasks = [Sample7TaskDetail.model_validate(t) for t in tasks]
+    # 使用预先创建好的 loader 实例
     tasks = await Resolver(loader_instances={UserLoader: user_loader}).resolve(tasks)
     return tasks
 ```

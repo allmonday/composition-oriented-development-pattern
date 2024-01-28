@@ -264,6 +264,8 @@ class Sample1TeamDetail(tms.Team):
  
 - https://github.com/syrusakbary/aiodataloader?tab=readme-ov-file#creating-a-new-dataloader-per-request
 - https://strawberry.rocks/docs/guides/dataloaders#usage-with-context
+- https://www.apollographql.com/docs/apollo-server/data/fetching-data/#adding-data-sources-to-your-context-function
+
 
 这间接导致, 如果一个 loader 在多处被使用了, 那么对这个loader 的修改就会很困难. ( 因为 Query 太全能, 一个系统被全局关联了, 反而导致修改很困难 )
 

@@ -2,9 +2,11 @@
 
 进入 `sample_2`.
 
-考虑这么一种场景, 需要列出 team 中 level 为 senior (或者其他值) 的 members, 那么 loader 需要提供添加过滤条件的手段.
+考虑这么一种场景, 需要列出 Team 中 level 为 senior (或者其他值) 的 members, 因此 loader 需要提供添加过滤条件的手段.
 
-我们可以这么做, 在 `src.services.user.loader` 中添加 `UserByLevelLoader`, 它有一个类属性 `level`. 在初始化 loader 之后, 通过设置 `self.level` 就能实现功能, 现在问题是怎么为 `self.level` 赋值.
+我们可以这么做, 在 `src.services.user.loader` 中添加 `UserByLevelLoader`, 它有一个类属性 `level`. 
+
+在初始化 loader 之后, 通过设置 `self.level` 就能实现功能, 现在问题是怎么为 `self.level` 赋值.
 
 > 一个 loader 实例的 filter 字段值是不可改变的. 不同的 filter 组合需要对应到各自的 loader 实例
 
@@ -19,7 +21,7 @@ class UserByLevelLoader(DataLoader):
             stmt = (select(tm.TeamUser.team_id, User)
                     .join(tm.TeamUser, tm.TeamUser.user_id == User.id)
                     .where(tm.TeamUser.team_id.in_(team_ids))
-                    .where(User.level == self.level))  # <--- filter
+                    .where(User.level == self.level))  # <---------------- filter
             pairs = (await session.execute(stmt))
             dct = defaultdict(list)
             for pair in pairs:
@@ -27,7 +29,7 @@ class UserByLevelLoader(DataLoader):
             return [dct.get(team_id, []) for team_id in team_ids]
 ```
 
-这个参数可以从 Resolver 中传入, `loader_filters` 中指定要设置参数的 DataLoader 子类和具体参数, 在内部执行时就会赋值过去.
+这个参数可以从 Resolver 中传入, `loader_filters` 中指定要设置参数的 DataLoader 子类和具体参数, 在内部执行时就会进行赋值.
 
 ```python
 teams = await tmq.get_teams(session)
@@ -40,7 +42,9 @@ teams = await Resolver(loader_filters={
 return teams
 ```
 
-顺带说一下, 如果需要使用 loader 多次, 比如同时查询 level senior 和 junior 的两组 members, 可以对 Loader 做一次拷贝之后变成新的 Loader 来使用.
+顺带说一下, 如果需要使用 loader 多次, 比如同时查询 level senior 和 junior 的两组 members, 因为 `pydantic-resolve` 中是对每一个 DataLoader类生成实例的, 所以无法对同一个 DataLoader 做复用.
+
+解决方法是对 DataLoader 做一次拷贝之后变成新的 DataLoader 来使用.
 
 ```python
 # schema.py
@@ -67,7 +71,14 @@ class Sample2TeamDetailMultipleLevel(tms.Team):
                                     ):
         return await loader_j.load(self.id) + await loader_s.load(self.id)
 
+```
 
+> 请注意 `senior_junior`, 你会发现， loader 支持同时加载多个来组合使用.
+>
+> 这种情况下， loader_j 和 loader_s 的 batch 会分两批执行。
+
+
+```python
 # router.py
 @route.get('/teams-with-detail-of-multiple-level', response_model=List[Sample2TeamDetail])
 async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depends(db.get_session)):
@@ -85,6 +96,3 @@ async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depend
     return teams
 ```
 
-请注意 `senior_junior`, 你会发现， loader 可以声明多个一起使用。
-
-> 这种情况下， loader_j 和 loader_s 的 batch 会分两批执行。

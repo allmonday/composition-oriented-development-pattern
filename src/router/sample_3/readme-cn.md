@@ -1,12 +1,14 @@
-### Expose
+### 向子孙节点暴露字段信息.
 
 进入 `sample_3`.
 
-第二种情况, 我想让 task 又一个 full_name 字段, 直接包含所有层级的前缀. 比如 team_a -> sprint_a -> story_a -> task_a, 那么 task_a 的 full_name就是 `team_a/sprint_a/story_a/task_a`
+我想让 task 有一个 full_name 字段, 直接包含所有上层的前缀.
 
-schema 可以通过 `__pydantic_resolve_expose__ = {'name': 'team_name'}` 这样的方式, 给自己的某个字段取别名, 然后暴露给自己所有的子孙节点.
+比如 team_a -> sprint_a -> story_a -> task_a, 那么 task_a 的 full_name就是 `team_a/sprint_a/story_a/task_a`
 
-> 别名需要保证全局 (整个Resolve scope) 唯一.
+我们可以通过给 schema 设置 `__pydantic_resolve_expose__ = {'name': 'team_name'}` 这样的方式, 给自己的某个字段取别名, 然后暴露给自己所有的子孙节点.
+
+> 别名需要保证全局 (整个Resolve 接收的 schema) 唯一. 否则 pydantic-reslove 会抛出错误.
 
 反过来在任意子孙节点, 都能够通过 ancestor_context 参数, 来读取到直接祖先的 `name` 字段的值.
 
@@ -28,3 +30,5 @@ class Sample3TaskDetail(ts.Task):
         story = ancestor_context['story_name']
         return f"{team}/{sprint}/{story}/{self.name}"
 ```
+
+通过这种方式, 我们可以访问任意层级的祖先数据, 这给数据处理带来了巨大的便利. 可以满足各种 UI 展示上的需求.
