@@ -19,34 +19,80 @@
 - https://github.com/allmonday/pydantic-resolve
 - https://github.com/allmonday/pydantic2-resolve
 
+## 示例项目：搭建 Mini JIRA API
+
+我们将通过面向组合的开发模式来灵活得构造各种API 结构。
+
+```mermaid
+---
+title: Mini JIRA
+---
+
+erDiagram
+    Team ||--o{ Sprint : one_to_many
+    Team ||--o{ User : one_to_many
+    Sprint ||--o{ Story : one_to_many
+    Story ||--o{ Task : one_to_many
+    Story ||--|| User : one_to_one
+    Task ||--|| User : one_to_one
+
+    Team {
+      int id
+      string name
+    }
+    Sprint {
+      int id
+      string name
+    }
+    Story {
+      int id
+      int sprint_id
+      string name
+      int owner_id
+    }
+    Task {
+      int id
+      int story_id
+      string name
+      int owner_id
+    }
+    User {
+      int id
+      string name
+    }
+```
+
 ## 什么是面向组合的模式?
 
 在日常开发中, 为了获取复杂结构的数据, 我们常常会选择 client 多次请求后拼装, 或者在 service 中构建复杂查询来实现.
 
 这时如果要求的数据发生了变化, 那么 client 或者 service 层的查询也要跟着调整.
 
-这种变化污染了理想的分层设计, 把对业务的改动侵入到了 service 之中.
+这种变化**污染了**理想的分层设计, 把对业务的改动侵入到了 service 或者 client 之中.
 
-现在流行的思路是借助 graphql, 但整套方案的引入成本对后端来说并不低. 并且前端还需要手写 query 来描述字段, 没有直接 rpc-like 的请求体验顺畅. (rpc-like 可以参考 openapi + typescript-openapi-codegen)
+现在流行的思路是借助 GraphQL, 但整套方案的引入成本对后端来说并不低. 并且前端还需要引入额外框架，手写 query 来描述字段也没有直接 rpc-like 的请求体验顺畅. 
 
-面向组合的开发模式就是为了解决这个问题, 通过使用 `pydantic2-resolve` 让 router 层负责构建 schema 来封装变化, 从而避免 service 和 client 的改动.
+> rpc like RESTful 可以参考 openapi + typescript-openapi-codegen
+
+面向组合的开发模式就是为了解决这个问题, 通过使用 `pydantic2-resolve` 让 router 层独立负责构建 schema 来封装所有需求变化, 进而避免 service 和 client 的调整.
 
 在本 repo 的案例中, 有 services 和 routers 两个目录.
 
 services 主要负责某一种业务服务的:
 
 - schema 定义
-- 业务 query (业务 root 数据的查询, 可以理解成还未拼装关联数据的主数据.)
-- dataloader (服务于数据拼装)
+- query 处理业务查询
+- mutation 处理变更操作 （这个不在本模式讨论范围之内）
+- dataloader 提供数据拼装服务
 
-routers 则通过**组合**多个 service 的 query + (schema + loader) 来返回需要的数据.
+routers 则通过**组合**多个 service 的 `query + schema + loader` 来返回需要的数据.
 
-这种组合方式可以实现通用服务和具体业务之间的自由组合, 从 service 简洁快速的构建出满足业务需求的 router/API.
+这种组合方式可以实现将`通用服务`组合成一个个`具体业务`, 从 service 简洁快速的构建出满足业务需求的 router & API.
 
 ![](./static/explain.png)
 
 比如下例中, `Sample1StoryDetail` 就是由多个 schema + loader 组成的.
-而 `Sample1StoryDetail` 继承的 Story 数据由业务 query 来提供.
+`Sample1StoryDetail` 继承的 Story 数据由业务 query 来提供.
 
 ```python
 from typing import Optional
@@ -101,58 +147,13 @@ uvicorn src.main:app --port=8000 --reload
 
 可以在 swagger 中执行查看每个 API 的返回值
 
-## 搭建 Mini JIRA API
-
-让我们从一个 mini-jira 系统开始.
-
-`mini-jira` 有这么些实体概念，分配到了各个 service 中。
-
-```mermaid
----
-title: Mini JIRA
----
-
-erDiagram
-    Team ||--o{ Sprint : one_to_many
-    Team ||--o{ User : one_to_many
-    Sprint ||--o{ Story : one_to_many
-    Story ||--o{ Task : one_to_many
-    Story ||--|| User : one_to_one
-    Task ||--|| User : one_to_one
-
-    Team {
-      int id
-      string name
-    }
-    Sprint {
-      int id
-      string name
-    }
-    Story {
-      int id
-      int sprint_id
-      string name
-      int owner_id
-    }
-    Task {
-      int id
-      int story_id
-      string name
-      int owner_id
-    }
-    User {
-      int id
-      string name
-    }
-```
-
 ## 功能介绍
 
 - [多层嵌套结构的构建](./src/router/sample_1/readme-cn.md)
 - [Loader 中对数据过滤](./src/router/sample_2/readme-cn.md)
 - [将字段暴露给子孙节点](./src/router/sample_3/readme-cn.md)
-- [resolve 结束后, 对获取数据的后处理](./src/router/sample_4/readme-cn.md)
-- [Loader 的复用](./src/router/sample_5/readme-cn.md)
+- [在resolve 结束后, 对获取数据的后处理](./src/router/sample_4/readme-cn.md)
+- [Context 和schema得复用](./src/router/sample_5/readme-cn.md)
 - [挑选需要返回的字段](./src/router/sample_6/readme-cn.md)
 - [操作 Loader 实例](./src/router/sample_7/readme-cn.md)
 - [用 service 测试代替 API 测试-wip](./src/services/sprint/readme-cn.md)
