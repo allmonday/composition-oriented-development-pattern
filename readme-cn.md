@@ -1,27 +1,62 @@
-# 面向组合的 API 开发模式
+# 面向组合的 API 开发模式 - 也许你并不需要 GraphQL
 
-在构建关系型数据的 API 时, 面对层层嵌套的数据和随时变化的业务需求.
+在构建 API 时, 数据的拼接和调整一直是比较头疼的问题. 
 
-是否存在一个兼顾灵活, 性能, 以及可维护的解决方案?
+过程式的数据处理对调整不友好, 循环和拼接容易产生不易维护的代码. GraphQL 带来的, 通过声明描述数据结构是一个好的方向.
 
-它应该能够支持以下功能:
+GraphQL 的亮点是通过 Query 确定查询结构, 一层层驱动后端的 resolver 来构造数据.
 
-- 支持异步
-- 支持定义多层的数据结构, 能够轻松扩展关联数据
+但完整的引入 GraphQL 对架构调整的侵入不小, 而且其自身也存在一系列的问题, 例如:
+
+- 无法描述尺寸不确定的递归结构
+- key 不确定的 Dict 结构
+- Query 语句在Schema 变化后有维护成本
+- 权限控制, 速率控制等问题, Schema 可能暴露过多信息.
+- Query 比较复杂的话, 性能问题不容易优化.
+- 无法对查询到达数据做比较精细的后期处理 (middleware 的入口是query 的顶层)
+- Schema 复杂之后, 容易出现复用代码的管理困难.
+
+对于一个有历史抱负的项目, 引入GraphQL 对前后端的改动成本也很客观. 
+
+另外, 从架构分层的角度来看, 引入 GraphQL 的代表着后端和前端的关系, 从以往一个个确定的接口变成了一个不可预测使用场景的单一接口. 这就导致前端对后端之间的依赖关系变得不清晰了(失去了感知), 后端只能以面向一组"可能的使用方式组合"为目标来做开发. 
+
+> 因此会看到有些GraphQL设计得就像一个个独立的API一样, 就是为了将各个接口之间区分开, 并且减少之间的深层schema 耦合
+
+## 什么是面向组合的模式?
+
+
+通过思考我们发现, GraphQL 的魅力主要是为在前后端分离的情况下, 为前端构造了容易渲染数据的组合体, 那么如果我们抛开 Query 这个环节, 直接让单个API 也可以返回相似的数据, 那么我们就不用引入 GraphQL 的一整套体系, 也能使用传统 RESTful 接口来提供组合好的数据了. 并且可以解决上述 GraphQL 的问题, 把前端数据处理的工作量尽量减少到最小. 
+
+这个模式下, 后端虽然不像 GraphQL 那样 "无所事事", 但可以获得对接口比较高的"控制权",  而且对已有架构的影响也不高, 本身输出嵌套的json 都是所有框架具备的能力. 设想在后端有一种类似 GraphQL query 一样的 schema 声明手段, 只要申明完毕 schema, 就能自动将数据生成出来, 这样就能保证开发效率, 并且维护住后端对前端具体使用的"感知".
+
+罗列一下, 这样的一个开发模式需要有以下这些能力:
+
+- 可以方便的描述组合体数据的 schema, 然后resolve出完整数据, 定义方式要简单.
+- 各个 service 仅需提供通用的 loader 就能提供数据组合能力.
 - 全局参数, 局部参数
-- 提供每层`resolve` 完子孙数据后, 有个 hook 来操作数据的能力
+- 每层 `resolve` 完子孙数据后, 有个 post 方法来操作数据
 - 挑选所需的字段
+- 支持异步
 - 避免 N+1 查询相关的性能问题
 - 友好的错误提醒, 方便 debug
 
-本 repo 会通过一系列的例子, 通过`pydantic2-resolve` 和一些约定, 来实现这么一套面向组合的 API 开发模式.
 
-- https://github.com/allmonday/pydantic-resolve
+下图简单的展示了组合模式的关系, 分为 service 和 router 两个部分.
+
+service 负责一个个具体业务对象, 对外提供业务`query` 以及通用的数据 `loader`. 
+
+router 负责拼接 `schema`, 然后将 `query` 提供的核心数据, 通过自动解析, 生成完整的数据.
+
+![](./static/explain2.png)
+
+本 repo 会通过一系列的例子, 结合 `pydantic2-resolve` 和一些约定, 来介绍这么一套面向组合的 API 开发模式.
+
 - https://github.com/allmonday/pydantic2-resolve
 
-## 示例项目：搭建 Mini JIRA API
 
-我们将通过面向组合的开发模式来灵活得构造各种API 结构。
+
+
+## 示例项目：搭建 Mini JIRA API
 
 ```mermaid
 ---
@@ -62,68 +97,37 @@ erDiagram
     }
 ```
 
-## 什么是面向组合的模式?
+Mini jira 包含了常见的敏捷开发中的各种概念和其之间的关系.
 
-在日常开发中, 为了获取复杂结构的数据, 我们常常会选择 client 多次请求后拼装, 或者在 service 中构建复杂查询来实现.
+我们将通过各种 `router/schema` 来描述并获得我们期望的数据结构, 这个过程将非常简洁.
 
-这时如果要求的数据发生了变化, 那么 client 或者 service 层的查询也要跟着调整.
-
-这种变化**污染了**理想的分层设计, 把对业务的改动侵入到了 service 或者 client 之中.
-
-现在流行的思路是借助 GraphQL, 但整套方案的引入成本对后端来说并不低. 并且前端还需要引入额外框架，手写 query 来描述字段也没有直接 rpc-like 的请求体验顺畅. 
-
-> rpc like RESTful 可以参考 openapi + typescript-openapi-codegen
-
-面向组合的开发模式就是为了解决这个问题, 通过使用 `pydantic2-resolve` 让 router 层独立负责构建 schema 来封装所有需求变化, 进而避免 service 和 client 的调整.
-
-在本 repo 的案例中, 有 services 和 routers 两个目录.
-
-services 主要负责某一种业务服务的:
-
-- schema 定义
-- query 处理业务查询
-- mutation 处理变更操作 （这个不在本模式讨论范围之内）
-- dataloader 提供数据拼装服务
-
-routers 则通过**组合**多个 service 的 `query + schema + loader` 来返回需要的数据.
-
-这种组合方式可以实现将`通用服务`组合成一个个`具体业务`, 从 service 简洁快速的构建出满足业务需求的 router & API.
-
-![](./static/explain.png)
-
-比如下例中, `Sample1StoryDetail` 就是由多个 schema + loader 组成的.
-`Sample1StoryDetail` 继承的 Story 数据由业务 query 来提供.
+比如下例中, 通过定义 Sample1StoryDetail 来获取 story -> task -> user 这样的多层数据.
 
 ```python
 from typing import Optional
-from pydantic2_resolve import LoaderDepend
+from pydantic2_resolve import LoaderDepend as LD
 
 # loaders
 import src.services.task.loader as tl
 import src.services.user.loader as ul
-import src.services.story.loader as sl
-import src.services.sprint.loader as spl
 
 # schemas
 import src.services.story.schema as ss
 import src.services.task.schema as ts
-import src.services.user.schema as us
-import src.services.sprint.schema as sps
-import src.services.team.schema as tms
 
 # compose together
 class Sample1TaskDetail(ts.Task):
     user: Optional[us.User] = None
-    def resolve_user(self, loader=LoaderDepend(ul.user_batch_loader)):
+    def resolve_user(self, loader=LD(ul.user_batch_loader)):
         return loader.load(self.owner_id)
 
 class Sample1StoryDetail(ss.Story):
     tasks: list[Sample1TaskDetail] = []
-    def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
+    def resolve_tasks(self, loader=LD(tl.story_to_task_loader)):
         return loader.load(self.id)
 
     owner: Optional[us.User] = None
-    def resolve_owner(self, loader=LoaderDepend(ul.user_batch_loader)):
+    def resolve_owner(self, loader=LD(ul.user_batch_loader)):
         return loader.load(self.owner_id)
 
 # query
@@ -134,6 +138,10 @@ async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session
     stories = await Resolver().resolve(stories)
     return stories
 ```
+
+具体请参看 router 下的一系列 sample_x 或者滚动到底部阅读文档.
+
+
 
 ## 执行代码
 
