@@ -67,3 +67,30 @@ class Sample4TeamDetail(tms.Team):
 ```
 
 利用这个功能, 我们在复用相同的数据时, 可以做很多定制化的修改.
+
+
+## 隐藏/过滤字段
+
+在上个案例中, 可能会有一个疑问, 这些task_count 有一些层级, 如果我不像返回回去呢? 我想将它在返回中屏蔽掉该怎么做?
+
+对于这种对外隐藏字段的需求, 可以使用 model_config 装饰器来实现.
+
+```python
+@model_config()
+class Sample4StoryDetail(ss.Story):
+    tasks: list[Sample4TaskDetail] = []
+    def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
+        return loader.load(self.id)
+    
+    task_count: int = Field(default=0, exclude=True)
+    def post_task_count(self):
+        return len(self.tasks)
+```
+
+两个改动, 一个是添加了 `model_config`装饰器, 另一个是用 `Field(exclude=True)` 来申明类型.
+
+在pydantic 中,如果exclude=True, 则会在输出中屏蔽该字段, 但是 schema 中依然能看到这个字段. 
+
+如果搭配了 `model_config` 就可以保证在 schema properties 中也屏蔽该字段.
+
+可以将代码中的注释移除后测试.
