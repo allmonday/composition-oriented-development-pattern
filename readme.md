@@ -179,4 +179,5 @@ You can execute it in swagger to view the return value of each API
 - [Picking the fields to be returned](./src/router/sample_6/readme.md)
 - [Loader instance](./src/router/sample_7/readme.md)
 - [Service testing is enough](./src/services/sprint/readme.md)
-- [Compare to GraphQL](./resolve-vs-graphql.md)
+- [Compare to GraphQL wip](./resolve-vs-graphql.md)
+- generating ts-sdk by openapi-typescirpt-codegen wip
