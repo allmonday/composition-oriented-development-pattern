@@ -1,4 +1,4 @@
-## Context 和schema的复用.
+## 利用 Context 和 Schema 实现复用.
 
 进入 `sample_5`
 

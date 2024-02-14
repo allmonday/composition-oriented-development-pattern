@@ -12,6 +12,9 @@ route = APIRouter(tags=['sample_3'], prefix="/sample_3")
 
 @route.get('/teams-with-detail', response_model=List[Sample3TeamDetail])
 async def get_teams_with_detail(session: AsyncSession = Depends(db.get_session)):
+    """
+    1.1 expose (provide) ancestor data to descendant node. 
+    """
     teams = await tmq.get_teams(session)
     teams = [Sample3TeamDetail.model_validate(t) for t in teams]
     teams = await Resolver().resolve(teams)

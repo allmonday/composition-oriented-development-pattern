@@ -1,8 +1,10 @@
 # Composition-oriented pattern for API development
 
-[chinese](./readme-cn.md)
+[chinese - latest](./readme-cn.md)
 
 [discord](https://discord.com/channels/1197929379951558797/1197929379951558800)
+
+> english version is under revamp.
 
 When building APIs for relational data, we are always faced with layers of nested data and ever-changing business requirements.
 
@@ -171,13 +173,13 @@ You can execute it in swagger to view the return value of each API
 
 ## Features & Scenarios
 
-- [Construction of multi-layer nested structures](./src/router/sample_1/readme.md)
-- [Data filtering in Loader](./src/router/sample_2/readme.md)
-- [Exposing fields to descendant nodes](./src/router/sample_3/readme.md)
-- [After resolved, post-processing of obtaining data](./src/router/sample_4/readme.md)
-- [Reuse of Loaders](./src/router/sample_5/readme.md)
-- [Picking the fields to be returned](./src/router/sample_6/readme.md)
-- [Loader instance](./src/router/sample_7/readme.md)
+- [Example 1: Construction of multi-layer nested structures](./src/router/sample_1/readme.md)
+- [Example 2: Data filtering in Loader](./src/router/sample_2/readme.md)
+- [Example 3: Exposing fields to descendant nodes](./src/router/sample_3/readme.md)
+- [Example 4: After resolved, post-processing of obtaining data](./src/router/sample_4/readme.md)
+- [Example 5: Reuse of Loaders](./src/router/sample_5/readme.md)
+- [Example 6: Picking the fields to be returned](./src/router/sample_6/readme.md)
+- [Example 7: Loader instance](./src/router/sample_7/readme.md)
 - [Service testing is enough](./src/services/sprint/readme.md)
 - [Compare to GraphQL wip](./resolve-vs-graphql.md)
 - generating ts-sdk by openapi-typescirpt-codegen wip
