@@ -1,4 +1,6 @@
-作为开始, 我们会一步步开始, 从返回单层 task 列表逐渐过渡到返回多层 Teams 列表.
+作为开始, 我们会一步步迭代, 从返回单层 task 列表逐渐过渡到返回多层 Teams 列表.
+
+来满足我们构建视图数据时最核心的需求.
 
 ## 简单列表
 
@@ -27,13 +29,9 @@ async def get_step_1_tasks(session: AsyncSession = Depends(db.get_session)):
 
 ## 构建嵌套列表
 
-接下来我们要将将 user 信息添加到 task 中, 在 sample_1 目录下创建 `schema.py`.
+接下来我们把 user 信息添加到 task 中, 在 sample_1 目录下创建 `schema.py`.
 
-然后定义一个扩展了 user 信息的 `Sample1TaskDetail` 类型.
-
-> 为了避免类型名字重复, 使用 router 名字作为前缀
->
-> 因此 Sample1 开头的 schema 都是属于 sample_1 路由的 (这点在生成前端 sdk ts 类型的时候将会很有用.)
+定义一个扩展了 user 信息的 `Sample1TaskDetail` 类型.
 
 ```python
 class Sample1TaskDetail(ts.Task):
@@ -42,26 +40,29 @@ class Sample1TaskDetail(ts.Task):
         return loader.load(self.owner_id)
 ```
 
+> 为了避免类型名字重复, 使用 router 名字作为前缀
+>
+> 因此 Sample1 开头的 schema 都是属于 sample_1 路由的 (这点在生成前端 sdk ts 类型的时候将会很有用.)
+
 几个注意点:
 
 1. 继承`ts.Task`后, `Sample1TaskDetail` 就可以用 `tq.get_tasks(session)` 返回的 orm 对象赋值.
 2. 定义 user 需要添加默认值, 否则用 `Sample1TaskDetail.model_valiate` 会报缺少字段错误.
 3. `ul.user_batch_loader` 会根据 `list[task.owner_id]` 来关联 task 和 user 对象. 具体看 `src.services.user.loader`
+4. resolve 返回的数据需要是 pydantic 可以转化的类型.
+5. 如果是 orm 对象需要配置 `ConfigDict(from_attribute=True)`
 
-loader 的作用是提前收集好所有task需要查询的 `task.owner_id`, 一次性查询完之后赋值给各自的 task
+loader 的作用是收集完所有task需要查询的 `task.owner_id`, 一次性查询完之后赋值给各自的 task
 
-> resolve 返回的数据需要是 pydantic 可以转化的类型.
->
-> 如果是 orm 对象需要配置 `ConfigDict(from_attribute=True)`
 
-然后在 `router.py` 中, 依然是通过 `tq.get_tasks(session)` 来获取初始数据, 接着转换成 `Sample1TaskDetail`. 之后交给 `Resolver` 就能 resolve 出所有 user 信息.
+在 `router.py` 中, 依然是通过 `tq.get_tasks(session)` 来获取初始数据, 将数据转换成 `Sample1TaskDetail`. 之后交给 `Resolver` 就能 resolve 出所有 user 信息.
 
 ```python
 @route.get('/tasks-with-detail', response_model=List[Sample1TaskDetail])
 async def get_tasks_with_detail(session: AsyncSession = Depends(db.get_session)):
     """ 1.3 return list of tasks(user) """
     tasks = await tq.get_tasks(session)
-    tasks = [Sample1TaskDetail.model_validate(t) for t in tasks]
+    tasks = [Sample1TaskDetail.model_validate(t) for t in tasks]  # 装载到目标schema
     tasks = await Resolver().resolve(tasks)
     return tasks
 ```
@@ -100,7 +101,7 @@ async def get_tasks_with_detail(session: AsyncSession = Depends(db.get_session))
 
 ## 多层嵌套列表
 
-使用相同的方式， 我们从 `tasks-with-details` 逐步构建到了 `teams-with-details`. 虽然是层层嵌套，但定义的方式非常简单。
+用相同的方式， 我们从 `tasks-with-details` 逐步构建到了 `teams-with-details`. 虽然是层层嵌套，但定义的方式非常简单。
 
 ```python
 # story
@@ -125,7 +126,9 @@ class Sample1TeamDetail(tms.Team):
 访问: `http://localhost:8000/sample_1/teams-with-detail`
 
 
-`get_teams_with_detail_2` 描述了另一种场景, 假如我们利用了一些 ORM 的外键查询, 提前获取到了 team + sprints 级别的数据, 拿我可以在这个数据的基础上继续 resolve.
+### 一种优化思路
+
+`get_teams_with_detail_2` 描述了另一种场景, 假如我们利用了一些 ORM 的外键查询, 提前获取到了 team + sprints 级别的数据, 那我可以以这个数据为基础继续向下 resolve.
 
 输入数据:
 
@@ -156,7 +159,7 @@ teams = [{
 }]
 ```
 
-转换类型, 可以看到此处没有了 `resolve_sprints`. 但 sprints 数据转换成 `Simple1SprintDetail` 类型之后, 会自动继续扩展获取定义的关联类型.
+转换类型, 可以看到此处没有了 `resolve_sprints`(已经提供了).  sprints 数据转换成 `Simple1SprintDetail` 类型之后, 会自动继续扩展获取定义的关联类型.
 
 ```python
 class Sample1TeamDetail2(tms.Team):
@@ -168,8 +171,10 @@ class Sample1TeamDetail2(tms.Team):
 ```
 
 > `resolve_method` 并不需要从顶层 class 就开始定义. `Resolver` 会递归遍历然后找到`resolver_method` 进行解析.
-> 
-> pydantic-resolve 不会去处理 ORM model 和 schema 直接是否统一声明的问题, 因为 ORM 层面向的持久层和pydantic schema 面向的业务层并不能保证始终一致.
+>
+> 因此你可以根据输入的数据做定制, 找到最简洁的扩展方式
+>
+> pydantic-resolve 不会去考虑 ORM model 和 schema 直接是否统需要一声明的问题, 因为 ORM 层面向的持久层和pydantic schema 面向的业务层并不能保证一致.
 
 
 ## Dataloader 的使用
@@ -194,7 +199,7 @@ async def team_to_sprint_loader(team_ids: list[int]):
         return build_list(sprints, team_ids, lambda u: u.team_id)  # to list
 ```
 
-可以看到 1:1 的关系查询 id 是目标的主键， 查询非常简单, 因此可复用性最高。
+可以看到 1:1 的关系查询 id 是目标的主键， 查询非常简单, 因此可复最方便。
 
 而 1:N 的查询需要有对应的关系表 (parent_id -> id) 来确定，所以复用情况取决于 parent_id。
 
@@ -204,10 +209,6 @@ async def team_to_sprint_loader(team_ids: list[int]):
 
 ```python
 class Sample1StoryDetail(ss.Story):
-    tasks: list[Sample1TaskDetail] = []
-    def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
-        return loader.load(self.id)
-
     owner: Optional[us.User] = None
     def resolve_owner(self, loader=LoaderDepend(ul.user_batch_loader)):
         return loader.load(self.owner_id)
@@ -244,16 +245,12 @@ async def team_to_user_loader(team_ids: list[int]):
 ```python
 
 class Sample1TeamDetail(tms.Team):
-    sprints: list[Sample1SprintDetail] = []
-    def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
-        return loader.load(self.id)
-
     members: list[us.User] = []
     def resolve_members(self, loader=LoaderDepend(ul.team_to_user_loader)):
         return loader.load(self.id)
 ```
 
-至此， Dataloader 的使用就介绍玩了.
+至此， Dataloader 的使用介绍完毕.
 
 
 ## 其他想法
@@ -271,4 +268,6 @@ class Sample1TeamDetail(tms.Team):
 
 因此 `pydantic-resolve` 利用 Resolver 提供的单独入口, 实现了通过 `LoaderDepend` 就近申明 loader 的功能
 
-这样一来 Resolver 就能按需来生成各个 loader 实例. 于是 loader 之间的替换修改就非常容易. 而且也不用把所有 loader 往一个 context 里面放了.
+这样一来 Resolver 就能按需来生成各个 loader 实例. 于是 loader 之间的替换修改就非常容易. 而且也不用把所有 loader 往一个 context 里面放了. 这间接约束了人们使用 loader 的自由.
+
+而在 `pydantic-resolve` 中, loader 们自由了, 开发可以随心所欲定制各种loader 而不用担心任何全局管理问题.
