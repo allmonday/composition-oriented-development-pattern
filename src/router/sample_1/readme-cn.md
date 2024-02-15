@@ -163,7 +163,7 @@ teams = [{
 
 ```python
 class Sample1TeamDetail2(tms.Team):
-    sprints: list[Sample1SprintDetail] = []
+    sprints: list[Sample1SprintDetail]  # no resolver, no default
     
     members: list[us.User] = []
     def resolve_members(self, loader=LoaderDepend(ul.team_to_user_loader)):
