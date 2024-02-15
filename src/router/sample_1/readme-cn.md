@@ -268,6 +268,6 @@ class Sample1TeamDetail(tms.Team):
 
 因此 `pydantic-resolve` 利用 Resolver 提供的单独入口, 实现了通过 `LoaderDepend` 就近申明 loader 的功能
 
-这样一来 Resolver 就能按需来生成各个 loader 实例. 于是 loader 之间的替换修改就非常容易. 而且也不用把所有 loader 往一个 context 里面放了. 这间接约束了人们使用 loader 的自由.
+这样一来 Resolver 就能按需来生成各个 loader 实例. loader 之间的替换修改就非常容易. 而且也不用把所有 loader 往一个 context 里面放了. 
 
-而在 `pydantic-resolve` 中, loader 们自由了, 开发可以随心所欲定制各种loader 而不用担心任何全局管理问题.
+在 `pydantic-resolve` 中, loader 们彻底自由了, 开发可以随心所欲定制各种loader 而不用担心任何全局管理问题.
