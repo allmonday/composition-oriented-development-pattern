@@ -1,20 +1,27 @@
-### 过滤
+## 为 Loader 提供过滤
 
-进入 `sample_2`.
+进入 `sample_2`. 为 1:N 的 loader 提供额外的过滤功能.
 
-考虑这么一种场景, 需要列出 Team 中 level 为 senior (或者其他值) 的 members, 因此 loader 需要提供添加过滤条件的手段.
+考虑这么一种场景, 需要列出 Team 中 level 为 senior (或者其他值) 的 members, 那么 loader 需要提供添加过滤条件的手段.
 
 我们可以这么做, 在 `src.services.user.loader` 中添加 `UserByLevelLoader`, 它有一个类属性 `level`. 
 
-在初始化 loader 之后, 通过设置 `self.level` 就能实现功能, 现在问题是怎么为 `self.level` 赋值.
+在初始化 loader 之后, 通过设置 `self.level` 就能实现功能
 
-> 一个 loader 实例的 filter 字段值是不可改变的. 不同的 filter 组合需要对应到各自的 loader 实例
+
+```python
+loader = UserByLevelLoader()
+loader.level = 'senior'
+```
+
+于是问题是如何在Resolver中为 `self.level` 赋值.
+
 
 ```python
 
 # team -> user (level filter)
 class UserByLevelLoader(DataLoader):
-    level: str = ''
+    level: str = ''  # filter
 
     async def batch_load_fn(self, team_ids: list[int]):
         async with db.async_session() as session:
@@ -29,6 +36,8 @@ class UserByLevelLoader(DataLoader):
             return [dct.get(team_id, []) for team_id in team_ids]
 ```
 
+> 一个 loader 实例的 filter 字段值是不可改变的.
+
 这个参数可以从 Resolver 中传入, `loader_filters` 中指定要设置参数的 DataLoader 子类和具体参数, 在内部执行时就会进行赋值.
 
 ```python
@@ -42,14 +51,16 @@ teams = await Resolver(loader_filters={
 return teams
 ```
 
-顺带说一下, 如果需要使用 loader 多次, 比如同时查询 level senior 和 junior 的两组 members, 因为 `pydantic-resolve` 中是对每一个 DataLoader类生成实例的, 所以无法对同一个 DataLoader 做复用.
+### 相同的Loader 使用不同的filter
+
+顺带说一下, 如果需要使用 loader 多次, 比如同时查询 level senior 和 junior 的两组 members, 因为 `pydantic-resolve` 中是对每一个 DataLoader类生成实例的, 所以无法对同一个 DataLoader 传递不同参数.
 
 解决方法是对 DataLoader 做一次拷贝之后变成新的 DataLoader 来使用.
 
 ```python
 # schema.py
 def copy_class(name, Kls):
-    return type(name, Kls.__bases__, dict(Kls.__dict__))
+    return type(name, Kls.__bases__, dict(Kls.__dict__))  # provide in pydantic2_resolve
 
 SeniorMemberLoader = copy_class('SeniorMemberLoader', ul.UserByLevelLoader)
 JuniorMemberLoader = copy_class('JuniorMemberLoader', ul.UserByLevelLoader)
@@ -96,3 +107,22 @@ async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depend
     return teams
 ```
 
+### 简便方式
+
+如果使用了多个loader 并且参数都相同的话, 可以使用 `global_loader_filter` 参数来统一提供参数.
+
+```python
+await Resolver(loader_filters={
+    LoaderA: {'level': 'senior'},
+    LoaderB: {'level': 'senior'},
+    LoaderC: {'level': 'senior'},
+    LoaderD: {'level': 'senior'},
+    LoaderE: {'level': 'senior', 'other': 'value'}}).resolve(data)
+```
+
+可以简化成
+```python
+await Resolver(
+    global_loader_filter={'level': 'senior'},
+    loader_filters={LoaderE: {'other': 'value'}}).resolve(data)
+```

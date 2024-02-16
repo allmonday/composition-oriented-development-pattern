@@ -126,7 +126,7 @@ class Sample1TeamDetail(tms.Team):
 访问: `http://localhost:8000/sample_1/teams-with-detail`
 
 
-### 一种优化思路
+### 另一种数据加载情景
 
 `get_teams_with_detail_2` 描述了另一种场景, 假如我们利用了一些 ORM 的外键查询, 提前获取到了 team + sprints 级别的数据, 那我可以以这个数据为基础继续向下 resolve.
 
@@ -199,7 +199,7 @@ async def team_to_sprint_loader(team_ids: list[int]):
         return build_list(sprints, team_ids, lambda u: u.team_id)  # to list
 ```
 
-可以看到 1:1 的关系查询 id 是目标的主键， 查询非常简单, 因此可复最方便。
+可以看到 1:1 的关系查询 id 是目标的主键， 查询非常简单, 复用最方便。
 
 而 1:N 的查询需要有对应的关系表 (parent_id -> id) 来确定，所以复用情况取决于 parent_id。
 
@@ -253,7 +253,7 @@ class Sample1TeamDetail(tms.Team):
 至此， Dataloader 的使用介绍完毕.
 
 
-## 其他想法
+## 聊聊DataLoader
 
 对于使用过 `graphene` 或者 `strawberry` 之类 graphql 框架的开发, dataloader 是一个很熟悉的东西.
 

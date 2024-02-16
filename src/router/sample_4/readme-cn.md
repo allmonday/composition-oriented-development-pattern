@@ -1,6 +1,6 @@
 ## 后处理钩子
 
-进入 `sample_4` 
+进入 `sample_4`. 介绍如何在数据获取之后进行额外处理. 
 
 这次我想在 team, sprint, story 上面添加 task_count 字段, 来统计每一层包含的 task 总数. 
 
@@ -71,9 +71,9 @@ class Sample4TeamDetail(tms.Team):
 
 ## 隐藏/过滤字段
 
-在上个案例中, 可能会有一个疑问, 这些task_count 有一些层级, 如果我不像返回回去呢? 我想将它在返回中屏蔽掉该怎么做?
+在上个案例中, 可能会有一种需求. 比如有一些层级的 task_count 我不想显示, 想将它在返回中屏蔽掉该怎么做?
 
-对于这种对外隐藏字段的需求, 可以使用 model_config 装饰器来实现.
+对于这种对外隐藏字段的需求, 可以使用 model_config 装饰器搭配`Field(exclude=True)`来实现.
 
 ```python
 @model_config()
@@ -91,6 +91,6 @@ class Sample4StoryDetail(ss.Story):
 
 在pydantic 中,如果exclude=True, 则会在输出中屏蔽该字段, 但是 schema 中依然能看到这个字段. 
 
-如果搭配了 `model_config` 就可以保证在 schema properties 中也屏蔽该字段.
+搭配了 `model_config` 就可以保证在 schema properties 中也屏蔽该字段.
 
 可以将代码中的注释移除后测试.
