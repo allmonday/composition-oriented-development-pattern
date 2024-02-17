@@ -6,17 +6,15 @@
 </template>
 
 <script setup lang="ts">
-import {Sample1Service, Sample1TeamDetail, Task} from 'src/client'
+import { Sample1Service, Sample1TeamDetail } from 'src/client'
 import { onMounted, ref } from 'vue';
 
 const teams = ref<Sample1TeamDetail[]>([])
 
-onMounted(async() => {
+onMounted(async () => {
     teams.value = await Sample1Service.getTeamsWithDetail()
 })
 
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
