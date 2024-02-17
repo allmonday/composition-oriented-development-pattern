@@ -316,4 +316,4 @@ uvicorn src.main:app --port=8000 --reload
 - [Example 7: 直接操作 Loader 实例](./src/router/sample_7/readme-cn.md)
 - [更灵活的测试: 用service测试代替 API 测试](./src/services/sprint/readme-cn.md)
 - [其他: 和 GraphQL 比较](./resolve-vs-graphql-cn.md)
-- [使用openapi codegen和前端集成](./fe-demo/README.md)
+- [使用openapi codegen和前端集成](./fe-demo/readme-cn.md)
