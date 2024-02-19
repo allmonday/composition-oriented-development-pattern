@@ -128,9 +128,9 @@ class Sample1TeamDetail(tms.Team):
 
 ### 另一种数据加载情景
 
-`get_teams_with_detail_2` 描述了另一种场景, 假如我们利用了一些 ORM 的外键查询, 提前获取到了 team + sprints 级别的数据, 那我可以以这个数据为基础继续向下 resolve.
+`get_teams_with_detail_2` 描述了另一种场景, 假如我们利用了一些 ORM 的关联查询, 或者从某个GraphQL 查询, 提前获取到了 team + sprints 级别的数据, 那我可以以这个数据为基础继续向下 resolve.
 
-输入数据:
+输入数据, 已经是嵌套的结构:
 
 ```python
 teams = [{
@@ -159,7 +159,7 @@ teams = [{
 }]
 ```
 
-转换类型, 可以看到此处没有了 `resolve_sprints`(已经提供了).  sprints 数据转换成 `Simple1SprintDetail` 类型之后, 会自动继续扩展获取定义的关联类型.
+转换类型, 可以看到此处没有 `resolve_sprints`(由根数据提供).  sprints 数据转换成 `Simple1SprintDetail` 类型之后, 会自动继续扩展获取定义的关联类型.
 
 ```python
 class Sample1TeamDetail2(tms.Team):
