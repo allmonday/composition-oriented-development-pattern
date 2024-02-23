@@ -4,8 +4,7 @@
 /* eslint-disable */
 import type { Sample6SprintDetail } from './Sample6SprintDetail';
 export type Sample6TeamDetail = {
-    id: number;
     name: string;
-    sprints?: Array<Sample6SprintDetail>;
+    sprints: Array<Sample6SprintDetail>;
 };
 

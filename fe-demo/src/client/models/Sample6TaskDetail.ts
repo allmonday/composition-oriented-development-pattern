@@ -4,10 +4,7 @@
 /* eslint-disable */
 import type { User } from './User';
 export type Sample6TaskDetail = {
-    id: number;
     name: string;
-    owner_id: number;
-    story_id: number;
-    user?: (User | null);
+    user: (User | null);
 };
 
