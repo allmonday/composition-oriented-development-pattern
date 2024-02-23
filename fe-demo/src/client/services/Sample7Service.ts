@@ -21,13 +21,22 @@ export class Sample7Service {
     }
     /**
      * Get User Stat
+     * @param id
      * @returns Sample7TeamDetail Successful Response
      * @throws ApiError
      */
-    public static getUserStat(): CancelablePromise<Array<Sample7TeamDetail>> {
+    public static getUserStat(
+        id: number,
+    ): CancelablePromise<Array<Sample7TeamDetail>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/sample_7/user/stat',
+            url: '/sample_7/user/{id}/stat',
+            path: {
+                'id': id,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 }

@@ -45,12 +45,12 @@ async def get_tasks(session: AsyncSession = Depends(db.get_session)):
     return tasks
 
 
-@route.get('/user/stat', response_model=list[Sample7TeamDetail])
-async def get_user_stat(session: AsyncSession = Depends(db.get_session)):
+@route.get('/user/{id}/stat', response_model=list[Sample7TeamDetail])
+async def get_user_stat(id: int, session: AsyncSession = Depends(db.get_session)):
     sprint_to_story_loader = SprintToStoryLoader()
     team_to_sprint_loader = TeamToSprintLoader()
 
-    users = await uq.get_user_by_ids([1], session)
+    users = await uq.get_user_by_ids([id], session)
     stories = await sq.get_stories_by_owner_ids([u.id for u in users], session)
     add_to_loader(sprint_to_story_loader, stories, lambda s: s.sprint_id)
 

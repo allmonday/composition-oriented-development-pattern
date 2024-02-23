@@ -1,6 +1,6 @@
 from typing import List, Optional
-from pydantic2_resolve import LoaderDepend, ensure_subset
-from pydantic import BaseModel, ConfigDict
+from pydantic2_resolve import LoaderDepend, ensure_subset, model_config
+from pydantic import BaseModel, ConfigDict, Field
 import src.db as db
 
 import src.services.task.loader as tl
@@ -16,29 +16,54 @@ import src.services.team.schema as tms
 
 import src.services.team.query as tmq
 
-class Sample6TaskDetail(ts.Task):
+@ensure_subset(ts.Task)
+@model_config()
+class Sample6TaskDetail(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    owner_id: int = Field(exclude=True)
+    name: str
+    def post_name(self):
+        return 'task name: ' + self.name
+
     user: Optional[us.User] = None
     def resolve_user(self, loader=LoaderDepend(ul.user_batch_loader)):
         return loader.load(self.owner_id)
 
-class Sample6StoryDetail(ss.Story):
+@ensure_subset(ss.Story)
+@model_config()
+class Sample6StoryDetail(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int = Field(exclude=True)
+    name: str
+    def post_name(self):
+        return 'story name: ' + self.name
+
     tasks: list[Sample6TaskDetail] = []
     def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
         return loader.load(self.id)
     
 @ensure_subset(sps.Sprint)  # pick what you want.
+@model_config()
 class Sample6SprintDetail(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
-    id: int
+    id: int = Field(exclude=True)
     name: str
-    team_id: int
+    def post_name(self):
+        return 'sprint name: ' + self.name
 
     stories: list[Sample6StoryDetail] = []
     def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
         return loader.load(self.id)
 
-class Sample6TeamDetail(tms.Team):
+@ensure_subset(tms.Team)
+@model_config()
+class Sample6TeamDetail(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int = Field(exclude=True)
+    name: str
+    def post_name(self):
+        return 'team name: ' + self.name
+
     sprints: list[Sample6SprintDetail] = []
     def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
         return loader.load(self.id)

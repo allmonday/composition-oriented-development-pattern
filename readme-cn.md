@@ -313,6 +313,35 @@ async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session
     return stories
 ```
 
+output:
+
+```json
+[
+  {
+    "id": 1,
+    "name": "mvp tech design",
+    "owner_id": 2,
+    "story_id": 1,
+    "user": {
+      "id": 2,
+      "name": "Eric",
+      "level": "junior"
+    }
+  },
+  {
+    "id": 2,
+    "name": "implementation",
+    "owner_id": 2,
+    "story_id": 1,
+    "user": {
+      "id": 2,
+      "name": "Eric",
+      "level": "junior"
+    }
+  }
+]
+```
+
 具体请参看 router 下的一系列 sample_x 或者滚动到底部阅读文档.
 
 

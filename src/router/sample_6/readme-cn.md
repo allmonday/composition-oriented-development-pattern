@@ -21,3 +21,5 @@ class Sample6SprintDetail(BaseModel):
     def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
         return loader.load(self.id)
 ```
+
+我们可以通过添加 Field(exclude=True) 来完全隐藏掉字段.
