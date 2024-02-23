@@ -319,24 +319,59 @@ output:
 [
   {
     "id": 1,
-    "name": "mvp tech design",
-    "owner_id": 2,
-    "story_id": 1,
-    "user": {
-      "id": 2,
-      "name": "Eric",
-      "level": "junior"
-    }
-  },
-  {
-    "id": 2,
-    "name": "implementation",
-    "owner_id": 2,
-    "story_id": 1,
-    "user": {
-      "id": 2,
-      "name": "Eric",
-      "level": "junior"
+    "name": "deliver a MVP",
+    "owner_id": 1,
+    "sprint_id": 1,
+    "tasks": [
+      {
+        "id": 1,
+        "name": "mvp tech design",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+          "id": 2,
+          "name": "Eric",
+          "level": "junior"
+        }
+      },
+      {
+        "id": 2,
+        "name": "implementation",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+          "id": 2,
+          "name": "Eric",
+          "level": "junior"
+        }
+      },
+      {
+        "id": 3,
+        "name": "tests",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+          "id": 2,
+          "name": "Eric",
+          "level": "junior"
+        }
+      },
+      {
+        "id": 4,
+        "name": "code review",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+          "id": 2,
+          "name": "Eric",
+          "level": "junior"
+        }
+      }
+    ],
+    "owner": {
+      "id": 1,
+      "name": "John",
+      "level": "senior"
     }
   }
 ]
