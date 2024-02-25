@@ -187,7 +187,8 @@ async def main():
 2. 获取`根数据`(树干), 转换成schema
 3. 让`Resolver`遍历解析出来所有的数据 (树枝,树叶).
 
-![](./static/resolve_data.png)
+resolve过程包含了 forward fetch, backward change 和 exclude fields 三个环节.
+![](./static/concept.png)
 
 > 根数据本身当然也可以是嵌套的结构
 
