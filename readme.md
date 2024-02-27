@@ -160,6 +160,7 @@ async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session
 
 ## Run code
 
+OpenAPI, aka Swagger
 ```shell
 python -m venv venv
 source venv/bin/activate
@@ -169,6 +170,23 @@ uvicorn src.main:app --port=8000 --reload
 ```
 
 You can execute it in swagger to view the return value of each API
+
+with UI
+```shell
+python -m venv venv
+source venv/bin/activate
+pip install -r requirement.txt
+uvicorn src.main:app  --port=8001 --reload
+
+cd fe-demo
+npm install
+# generate sdk
+npm run generate-client
+
+npm run dev
+```
+
+or visit the interactive UI.
 
 
 ## Features & Scenarios
