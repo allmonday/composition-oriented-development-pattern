@@ -88,7 +88,7 @@ The function of Dataloader is to collect all parent_ids to be queried, query all
 Data relationships may be 1:1, 1:N, M:N. From the parent's perspective, there are only two types: 1:1 and 1:N. Corresponding to these two situations, pydantic2-resolve provides two auxiliary functions
 
 ```python
-from pydantic2_resolve import build_list, build_object
+from pydantic_resolve import build_list, build_object
 
 # service.user.loader:  1 - 1
 async def user_batch_loader(user_ids: list[int]):

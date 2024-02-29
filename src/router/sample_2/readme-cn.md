@@ -60,7 +60,7 @@ return teams
 ```python
 # schema.py
 def copy_class(name, Kls):
-    return type(name, Kls.__bases__, dict(Kls.__dict__))  # provide in pydantic2_resolve
+    return type(name, Kls.__bases__, dict(Kls.__dict__))  # provide in pydantic_resolve
 
 SeniorMemberLoader = copy_class('SeniorMemberLoader', ul.UserByLevelLoader)
 JuniorMemberLoader = copy_class('JuniorMemberLoader', ul.UserByLevelLoader)

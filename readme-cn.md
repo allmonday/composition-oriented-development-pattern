@@ -281,7 +281,7 @@ Mini jira 包含了常见的敏捷开发中的各种概念和其之间的关系.
 
 ```python
 from typing import Optional
-from pydantic2_resolve import LoaderDepend as LD
+from pydantic_resolve import LoaderDepend as LD
 
 # loaders
 import src.services.task.loader as tl

@@ -1,6 +1,6 @@
 from typing import List, Optional
-from pydantic2_resolve import LoaderDepend
-from pydantic2_resolve.util import generate_list_empty_loader, generate_single_empty_loader
+from pydantic_resolve import LoaderDepend
+from pydantic_resolve.util import generate_list_empty_loader, generate_single_empty_loader
 from pydantic import BaseModel
 import src.db as db
 

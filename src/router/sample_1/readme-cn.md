@@ -184,7 +184,7 @@ Dataloader 的作用收集完所有要查询的 parent_ids 之后，一次性查
 数据关系从 parent 角度看的话，有 1:1 和 1:N 两种。 对应这两种情况，`pydantic2-resolve` 提供了两个辅助函数
 
 ```python
-from pydantic2_resolve import build_list, build_object
+from pydantic_resolve import build_list, build_object
 
 # service.user.loader:  1 - 1
 async def user_batch_loader(user_ids: list[int]):

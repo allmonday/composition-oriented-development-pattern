@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import  Depends
-from pydantic2_resolve import Resolver
+from pydantic_resolve import Resolver
 import src.db as db
 from .schema import Sample3TeamDetail
 import src.services.team.query as tmq

@@ -110,7 +110,7 @@ For example, in the example, `Sample1StoryDetail` is composed of multiple schema
 
 ```python
 from typing import Optional
-from pydantic2_resolve import LoaderDepend
+from pydantic_resolve import LoaderDepend
 
 # loaders
 import src.services.task.loader as tl

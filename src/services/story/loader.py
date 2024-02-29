@@ -2,7 +2,7 @@ from .model import Story
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import src.db as db
-from pydantic2_resolve import build_list
+from pydantic_resolve import build_list
 
 async def batch_get_stories_by_ids(session: AsyncSession, sprint_ids: list[int]):
     users = (await session.execute(select(Story).where(Story.sprint_id.in_(sprint_ids)))).scalars().all()

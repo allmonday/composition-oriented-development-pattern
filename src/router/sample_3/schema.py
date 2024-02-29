@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic2_resolve import LoaderDepend
+from pydantic_resolve import LoaderDepend
 from typing import Dict
 
 import src.services.task.loader as tl

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic2_resolve import LoaderDepend
+from pydantic_resolve import LoaderDepend
 
 import src.services.user.loader as ul
 

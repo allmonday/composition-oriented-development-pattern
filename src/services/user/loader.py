@@ -3,7 +3,7 @@ from .model import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import src.db as db
-from pydantic2_resolve import build_object
+from pydantic_resolve import build_object
 import src.services.team.model as tm
 from aiodataloader import DataLoader
 

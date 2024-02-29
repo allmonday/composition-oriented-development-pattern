@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic2_resolve import LoaderDepend, ensure_subset, model_config
+from pydantic_resolve import LoaderDepend, ensure_subset, model_config
 from pydantic import BaseModel, ConfigDict, Field
 import src.db as db
 

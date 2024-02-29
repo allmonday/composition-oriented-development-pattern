@@ -1,6 +1,6 @@
 from typing import List, Optional
 from pydantic import Field
-from pydantic2_resolve import LoaderDepend, model_config
+from pydantic_resolve import LoaderDepend, model_config
 
 import src.services.task.loader as tl
 import src.services.user.loader as ul
