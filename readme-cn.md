@@ -34,9 +34,10 @@ member_map = group_by_team_id(members)
 
 for m in members:
   m.tasks = task_map[m.id]
-for t in teams:
-  t.members = member_map[t.id]
-...
+  for t in teams:
+    t.members = member_map[t.id]
+    ...
+
 ```
 
 > 或者在一些特定场景下借助 ORM 来处理relationship 关系的查询.
