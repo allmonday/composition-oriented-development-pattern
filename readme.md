@@ -201,3 +201,18 @@ or visit the interactive UI.
 - [Service testing is enough](./src/services/sprint/readme.md)
 - [Compare to GraphQL wip](./resolve-vs-graphql.md)
 - generating ts-sdk by openapi-typescirpt-codegen wip
+
+
+## Bonus
+
+```shell
+pip install fastapi-router-viz
+router-viz -m src.main  --model_prefixs src.services
+```
+
+install `Graphviz Interactive Preview (Visual Studio Code Extension)` in vscode
+
+open `router-viz.dot` then you can explore your project.
+
+![](./map.png)
+
