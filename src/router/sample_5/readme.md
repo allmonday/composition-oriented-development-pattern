@@ -1,6 +1,12 @@
-## 利用 Context 实现查询复用.
+# 利用 Context 实现查询复用.
 
-### 面向页面提供视图数据
+```shell
+router-viz -m src.main  --model_prefixs src.servicesls --tags sample_5 --show_fields
+```
+
+![](./s5.png)
+
+## 面向页面提供视图数据
 
 进入 `sample_5`
 
@@ -35,7 +41,7 @@ router 里面只要初始化一下, 剩下的交给 Resolver 就好了.
 >
 > 一个小的最佳实践: resolve_method 中不要自己写业务查询逻辑, 要调用 servcie 中封装好的 query 方法. 这样可以保持 schema 的简洁和拼装的清晰. schema 中要么调用 query, 要么调用 loader, 用配置+组合的思考方式来定义 schema.
 
-### Context 帮助提取参数
+## Context 帮助提取参数
 
 让我们更进一步, 让 router 可以接收一个 `team_id` 参数, 然后 teams 变成 team, 这时就可以通过 context 来传递参数了.
 context 是一个保留参数, 在所有 resolve 和 post 方法中都可以使用它来获取 Resolver 中定义的参数.

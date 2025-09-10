@@ -1,4 +1,10 @@
-## 后处理钩子
+# 后处理钩子
+
+```shell
+router-viz -m src.main  --model_prefixs src.servicesls --tags sample_4 --show_fields
+```
+
+![](./s4.png)
 
 进入 `sample_4`. 介绍如何在数据获取之后进行额外处理. 
 

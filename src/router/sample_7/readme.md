@@ -1,4 +1,10 @@
-## Loader instance 的使用
+# Loader instance 的使用
+
+```shell
+router-viz -m src.main  --model_prefixs src.servicesls --tags sample_7 --show_fields
+```
+
+![](./s7.png)
 
 通常情况下 loader instance 是由 Resolver 内部实例化并且维护的。
 

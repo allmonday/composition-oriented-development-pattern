@@ -1,4 +1,10 @@
-### 向子孙节点提供字段信息.
+# 向子孙节点提供字段信息.
+
+```shell
+router-viz -m src.main  --model_prefixs src.servicesls --tags sample_3 --show_fields
+```
+
+![](./s3.png)
 
 进入 `sample_3`.
 

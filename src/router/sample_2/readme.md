@@ -1,4 +1,10 @@
-## 为 Loader 提供过滤
+# 为 Loader 提供过滤
+
+```shell
+router-viz -m src.main  --model_prefixs src.servicesls --tags sample_2 --show_fields
+```
+
+![](./s2.png)
 
 进入 `sample_2`. 为 1:N 的 loader 提供额外的过滤功能.
 
@@ -51,7 +57,7 @@ teams = await Resolver(loader_filters={
 return teams
 ```
 
-### 相同的Loader 使用不同的filter
+## 相同的Loader 使用不同的filter
 
 顺带说一下, 如果需要使用 loader 多次, 比如同时查询 level senior 和 junior 的两组 members, 因为 `pydantic-resolve` 中是对每一个 DataLoader类生成实例的, 所以无法对同一个 DataLoader 传递不同参数.
 
@@ -107,7 +113,7 @@ async def get_teams_with_detail_of_multiple_level(session: AsyncSession = Depend
     return teams
 ```
 
-### 简便方式
+## 简便方式
 
 如果使用了多个loader 并且参数都相同的话, 可以使用 `global_loader_filter` 参数来统一提供参数.
 

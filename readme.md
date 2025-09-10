@@ -8,7 +8,183 @@
 
 > 使用面向组合的开发模式，写出更容易维护， 更好分析的业务逻辑。 
 
-## 前言
+## 示例：搭建 Mini JIRA API
+
+```mermaid
+---
+title: Mini JIRA
+---
+
+erDiagram
+    Team ||--o{ Sprint : one_to_many
+    Team ||--o{ User : one_to_many
+    Sprint ||--o{ Story : one_to_many
+    Story ||--o{ Task : one_to_many
+    Story ||--|| User : one_to_one
+    Task ||--|| User : one_to_one
+
+    Team {
+      int id
+      string name
+    }
+    Sprint {
+      int id
+      string name
+    }
+    Story {
+      int id
+      int sprint_id
+      string name
+      int owner_id
+    }
+    Task {
+      int id
+      int story_id
+      string name
+      int owner_id
+    }
+    User {
+      int id
+      string name
+    }
+```
+
+Mini jira 包含了常见的敏捷开发中的各种概念和其之间的关系.
+
+我们将通过各种 `router/schema` 来描述并获得我们期望的数据结构, 这个过程将非常简洁.
+
+比如下例中, 通过定义 Sample1StoryDetail 来生成 story -> task -> user 这样的多层数据.
+
+只需要描述好 Task 要扩展的字段, Story 要扩展的字段, 然后 Resolver 就会帮你处理完后续的所有事情.
+
+```python
+from typing import Optional
+from pydantic_resolve import LoaderDepend as LD
+
+# loaders
+import src.services.task.loader as tl
+import src.services.user.loader as ul
+
+# schemas
+import src.services.story.schema as ss
+import src.services.task.schema as ts
+
+# compose together
+class Sample1TaskDetail(ts.Task):
+    user: Optional[us.User] = None
+    def resolve_user(self, loader=LD(ul.user_batch_loader)):
+        return loader.load(self.owner_id)
+
+class Sample1StoryDetail(ss.Story):
+    tasks: list[Sample1TaskDetail] = []
+    def resolve_tasks(self, loader=LD(tl.story_to_task_loader)):
+        return loader.load(self.id)
+
+    owner: Optional[us.User] = None
+    def resolve_owner(self, loader=LD(ul.user_batch_loader)):
+        return loader.load(self.owner_id)
+
+# query
+@route.get('/stories-with-detail', response_model=List[Sample1StoryDetail])
+async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session)):
+    stories = await sq.get_stories(session)
+    stories = [Sample1StoryDetail.model_validate(t) for t in stories]
+    stories = await Resolver().resolve(stories)
+    return stories
+```
+
+output:
+
+```json
+[
+  {
+    "id": 1,
+    "name": "deliver a MVP",
+    "owner_id": 1,
+    "sprint_id": 1,
+    "tasks": [
+      {
+        "id": 1,
+        "name": "mvp tech design",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+          "id": 2,
+          "name": "Eric",
+          "level": "junior"
+        }
+      },
+      {
+        "id": 2,
+        "name": "implementation",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+          "id": 2,
+          "name": "Eric",
+          "level": "junior"
+        }
+      },
+      {
+        "id": 3,
+        "name": "tests",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+          "id": 2,
+          "name": "Eric",
+          "level": "junior"
+        }
+      },
+      {
+        "id": 4,
+        "name": "code review",
+        "owner_id": 2,
+        "story_id": 1,
+        "user": {
+          "id": 2,
+          "name": "Eric",
+          "level": "junior"
+        }
+      }
+    ],
+    "owner": {
+      "id": 1,
+      "name": "John",
+      "level": "senior"
+    }
+  }
+]
+```
+
+
+## 执行代码
+
+```shell
+python -m venv venv
+source venv/bin/activate
+pip install -r requirement.txt
+uvicorn src.main:app --port=8000 --reload
+# http://localhost:8000/docs
+```
+
+可以在 swagger 中执行查看每个 API 的返回值
+
+## 功能介绍
+
+- [Example 1: 多层嵌套结构的构建](./src/router/sample_1/readme.md)
+- [Example 2: Loader 的进阶用法](./src/router/sample_2/readme.md)
+- [Example 3: 跨层级数据获取](./src/router/sample_3/readme.md)
+- [Example 4: 每层数据的后处理](./src/router/sample_4/readme.md)
+- [Example 5: 利用 Context 和 Schema 实现复用](./src/router/sample_5/readme.md)
+- [Example 6: 挑选字段](./src/router/sample_6/readme.md)
+- [Example 7: 直接操作 Loader 实例](./src/router/sample_7/readme.md)
+- [更灵活的测试: 用service测试代替 API 测试](./src/services/sprint/readme.md)
+- [其他: 和 GraphQL 比较](./resolve-vs-graphql.md)
+- [使用openapi codegen和前端集成](./fe-demo/readme.md)
+
+
+## 来龙去脉
 
 构建面向视图的数据时, 不可避免会出现组装数据的需求.
 
@@ -241,184 +417,6 @@ resolve过程包含了 forward fetch, backward change 和 exclude fields 三个�
 - https://github.com/allmonday/pydantic2-resolve
 
 
-
-## 示例：搭建 Mini JIRA API
-
-```mermaid
----
-title: Mini JIRA
----
-
-erDiagram
-    Team ||--o{ Sprint : one_to_many
-    Team ||--o{ User : one_to_many
-    Sprint ||--o{ Story : one_to_many
-    Story ||--o{ Task : one_to_many
-    Story ||--|| User : one_to_one
-    Task ||--|| User : one_to_one
-
-    Team {
-      int id
-      string name
-    }
-    Sprint {
-      int id
-      string name
-    }
-    Story {
-      int id
-      int sprint_id
-      string name
-      int owner_id
-    }
-    Task {
-      int id
-      int story_id
-      string name
-      int owner_id
-    }
-    User {
-      int id
-      string name
-    }
-```
-
-Mini jira 包含了常见的敏捷开发中的各种概念和其之间的关系.
-
-我们将通过各种 `router/schema` 来描述并获得我们期望的数据结构, 这个过程将非常简洁.
-
-比如下例中, 通过定义 Sample1StoryDetail 来生成 story -> task -> user 这样的多层数据.
-
-只需要描述好 Task 要扩展的字段, Story 要扩展的字段, 然后 Resolver 就会帮你处理完后续的所有事情.
-
-```python
-from typing import Optional
-from pydantic_resolve import LoaderDepend as LD
-
-# loaders
-import src.services.task.loader as tl
-import src.services.user.loader as ul
-
-# schemas
-import src.services.story.schema as ss
-import src.services.task.schema as ts
-
-# compose together
-class Sample1TaskDetail(ts.Task):
-    user: Optional[us.User] = None
-    def resolve_user(self, loader=LD(ul.user_batch_loader)):
-        return loader.load(self.owner_id)
-
-class Sample1StoryDetail(ss.Story):
-    tasks: list[Sample1TaskDetail] = []
-    def resolve_tasks(self, loader=LD(tl.story_to_task_loader)):
-        return loader.load(self.id)
-
-    owner: Optional[us.User] = None
-    def resolve_owner(self, loader=LD(ul.user_batch_loader)):
-        return loader.load(self.owner_id)
-
-# query
-@route.get('/stories-with-detail', response_model=List[Sample1StoryDetail])
-async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session)):
-    stories = await sq.get_stories(session)
-    stories = [Sample1StoryDetail.model_validate(t) for t in stories]
-    stories = await Resolver().resolve(stories)
-    return stories
-```
-
-output:
-
-```json
-[
-  {
-    "id": 1,
-    "name": "deliver a MVP",
-    "owner_id": 1,
-    "sprint_id": 1,
-    "tasks": [
-      {
-        "id": 1,
-        "name": "mvp tech design",
-        "owner_id": 2,
-        "story_id": 1,
-        "user": {
-          "id": 2,
-          "name": "Eric",
-          "level": "junior"
-        }
-      },
-      {
-        "id": 2,
-        "name": "implementation",
-        "owner_id": 2,
-        "story_id": 1,
-        "user": {
-          "id": 2,
-          "name": "Eric",
-          "level": "junior"
-        }
-      },
-      {
-        "id": 3,
-        "name": "tests",
-        "owner_id": 2,
-        "story_id": 1,
-        "user": {
-          "id": 2,
-          "name": "Eric",
-          "level": "junior"
-        }
-      },
-      {
-        "id": 4,
-        "name": "code review",
-        "owner_id": 2,
-        "story_id": 1,
-        "user": {
-          "id": 2,
-          "name": "Eric",
-          "level": "junior"
-        }
-      }
-    ],
-    "owner": {
-      "id": 1,
-      "name": "John",
-      "level": "senior"
-    }
-  }
-]
-```
-
-具体请参看 router 下的一系列 sample_x 或者滚动到底部阅读文档.
-
-
-
-## 执行代码
-
-```shell
-python -m venv venv
-source venv/bin/activate
-pip install -r requirement.txt
-uvicorn src.main:app --port=8000 --reload
-# http://localhost:8000/docs
-```
-
-可以在 swagger 中执行查看每个 API 的返回值
-
-## 功能介绍
-
-- [Example 1: 多层嵌套结构的构建](./src/router/sample_1/readme.md)
-- [Example 2: Loader 的进阶用法](./src/router/sample_2/readme.md)
-- [Example 3: 跨层级数据获取](./src/router/sample_3/readme.md)
-- [Example 4: 每层数据的后处理](./src/router/sample_4/readme.md)
-- [Example 5: 利用 Context 和 Schema 实现复用](./src/router/sample_5/readme.md)
-- [Example 6: 挑选字段](./src/router/sample_6/readme.md)
-- [Example 7: 直接操作 Loader 实例](./src/router/sample_7/readme.md)
-- [更灵活的测试: 用service测试代替 API 测试](./src/services/sprint/readme.md)
-- [其他: 和 GraphQL 比较](./resolve-vs-graphql.md)
-- [使用openapi codegen和前端集成](./fe-demo/readme.md)
 
 
 ## 总结

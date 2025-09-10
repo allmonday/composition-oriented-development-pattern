@@ -1,4 +1,10 @@
-## 挑选所需的字段
+# 挑选所需的字段
+
+```shell
+router-viz -m src.main  --model_prefixs src.servicesls --tags sample_6 --show_fields
+```
+
+![](./s6.png)
 
 进入 `sample_6`
 

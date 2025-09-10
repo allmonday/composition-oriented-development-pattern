@@ -1,3 +1,11 @@
+# Hello world
+
+```shell
+router-viz -m src.main  --model_prefixs src.servicesls --tags sample_1 --show_fields
+```
+
+![](./s1.png)
+
 作为开始, 我们会一步步迭代, 从返回单层 task 列表逐渐过渡到返回多层 Teams 列表.
 
 来满足我们构建视图数据时最核心的需求.
