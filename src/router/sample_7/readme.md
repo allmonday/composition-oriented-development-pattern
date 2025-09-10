@@ -1,16 +1,17 @@
-## Use of Loader instance
+## Loader instance 的使用
 
-Normally loader instance is instantiated and maintained internally by Resolver.
+通常情况下 loader instance 是由 Resolver 内部实例化并且维护的。
 
-If you already have a loader, and the loader has added data through the `prime` method, you can use the loader_instance parameter to pass in the Resolver internally to skip the initialization process and use it directly. The loader instance passed in.
+如果你已经有一个 loader，并且这个 loader 已经通过 `prime` 方法添加过了数据的话， 那么可以使用 `loader_instance` 参数传入，让 Resolver内部跳过初始化过程， 直接使用传进来的 loader 实例。
 
-Taking UserLoader as an example, you can use a real and available `loader src.service.user.loader:user_batch_loader`, or you can use `generate_single_empty_loader` to generate a Loader class.
+以 UserLoader 为例子， 可以使用一个真实可用的 loader `src.service.user.loader:user_batch_loader`，也可以使用 `generate_single_empty_loader` 来生成一个 Loader 类。
 
-The difference between the two is that if the data passed in by `loader.load`(key) is not in the loader cache, batch_load_fn will be triggered to query, while `generate_single_empty_loader` will do nothing, if it does not exist, return None
+两者的区别在于， 如果`loader.load(key)` 传入的数据如果不在 loader cache 中， 会触发 `batch_load_fn` 进行查询
 
-> generate_list_empty_loader returns [] by default
+`generate_single_empty_loader` 内置的 `batch_load_fn` 不会做任何事情，如果不存在就返回 `None`
 
-schema
+> generate_list_empty_loader 默认返回 []
+
 
 ```python
 UserLoader = generate_single_empty_loader('UserLoader')
@@ -21,9 +22,10 @@ class Sample7TaskDetail(ts.Task):
         return loader.load(self.owner_id)
 ```
 
-In the router, `add_single_to_loader` is used to handle the prime logic. It simulates pre-fetching user information, adds it to the loader, and then provides it to Sample7TaskDetail.
+router 中使用 `add_single_to_loader` 来处理 `prime` 逻辑
 
-If you comment the `add_single_to_loader` method, you will find that all users are None
+模拟预先获取 users 信息， 然后加入 loader, 再提供给 `Sample7TaskDetail` 使用。
+
 
 ```python
 def add_single_to_loader(loader, items, get_key):
@@ -35,17 +37,20 @@ def add_single_to_loader(loader, items, get_key):
 
 @route.get('/tasks', response_model=list[Sample7TaskDetail])
 async def get_tasks(session: AsyncSession = Depends(db.get_session)):
-    users = await uq.get_users(session)
+    # 初始化 loader, 提前加载所有数据 
     user_loader = UserLoader()
+    users = await uq.get_users(session)
     add_single_to_loader(user_loader, users, lambda u: u.id)
 
     tasks = await tskq.get_tasks(session)
     tasks = [Sample7TaskDetail.model_validate(t) for t in tasks]
+    # 使用预先创建好的 loader 实例
     tasks = await Resolver(loader_instances={UserLoader: user_loader}).resolve(tasks)
     return tasks
 ```
+> 如果注释 `add_single_to_loader`方法， 会发现所有的 user 都是 None
 
-In the slightly more complex second example, we start from user[1] and traverse through each layer to find the stories owned by the user, the sprints to which each story belongs, and the teams to which each sprint belongs. The display starts from the Teams level and continues to unfold layer by layer.
+第二个稍微复杂一些的例子， 从 user[1] 开始， 层层寻找 user 拥有的 story, story 归属的 sprint， sprint 归属的 team, 然后反向从 Teams 开始层层往下展示。
 
 ```python
 @route.get('/user/stat', response_model=list[Sample7TeamDetail])

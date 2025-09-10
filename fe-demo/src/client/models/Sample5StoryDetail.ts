@@ -8,7 +8,7 @@ export type Sample5StoryDetail = {
     name: string;
     owner_id: number;
     sprint_id: number;
-    tasks?: Array<Sample5TaskDetail>;
-    task_count?: number;
+    tasks: Array<Sample5TaskDetail>;
+    task_count: number;
 };
 

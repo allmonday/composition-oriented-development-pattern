@@ -7,7 +7,7 @@ import type { User } from './User';
 export type Sample1TeamDetail = {
     id: number;
     name: string;
-    sprints?: Array<Sample1SprintDetail>;
-    members?: Array<User>;
+    sprints: Array<Sample1SprintDetail>;
+    members: Array<User>;
 };
 

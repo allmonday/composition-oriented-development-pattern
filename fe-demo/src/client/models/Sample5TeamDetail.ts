@@ -6,8 +6,8 @@ import type { Sample5SprintDetail } from './Sample5SprintDetail';
 export type Sample5TeamDetail = {
     id: number;
     name: string;
-    sprints?: Array<Sample5SprintDetail>;
-    task_count?: number;
+    sprints: Array<Sample5SprintDetail>;
+    task_count: number;
     description?: string;
 };
 

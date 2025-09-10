@@ -6,8 +6,9 @@ import type { Sample4SprintDetail } from './Sample4SprintDetail';
 export type Sample4TeamDetail = {
     id: number;
     name: string;
-    sprints?: Array<Sample4SprintDetail>;
-    task_count?: number;
+    sprints: Array<Sample4SprintDetail>;
+    task_count: number;
+    total_task_count: number;
     description?: string;
 };
 

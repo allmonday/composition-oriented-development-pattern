@@ -8,6 +8,6 @@ export type Sample4TaskDetail = {
     name: string;
     owner_id: number;
     story_id: number;
-    user?: (User | null);
+    user: (User | null);
 };
 

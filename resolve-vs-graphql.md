@@ -1,37 +1,52 @@
-## Comparison of pydantic-resolve and GraphQL frameworks
+## pydantic-resolve 和 GraphQL 框架比较
 
 ### GraphQL
 
-GraphQL advantages
+优点
 
-- The client can dynamically obtain data based on the query
-- introspection can see all fields
-- Strongly typed
-- The scenario development experience with separation of front and back ends is better and is friendly to the front end.
+- client 可以根据查询动态获取数据
+- 申明式的查询描述
+- introspection 可以看到所有字段
+- 强类型
 
-GraphQL Disadvantages
+缺点
 
-- Lack of ability to perform data aggregation between tiers
-- If it is full-stack development, there is duplication of work in the backend and writing queries.
-- The backend needs to introduce graphql related framework
-- Cache, authority, rate limit are not easy to control
-- Not very friendly to the backend
+- 自顶向下获取数据, 无法在下层数据获取后重新修改上层数据
+- 内部项目使用query 有些重复劳动
+- 框架引入成本高
 
 ### Pydantic-resolve
 
-pydantic-resolve advantage：
+pydantic-resolve 优点：
 
-- Provides the ability to combine various data
-- Strong typing (pydantic)
-- Provides hooks to modify data
-- Seamless connection with RESTful interface, smooth transition
-- It is very suitable for full-stack development. After implementing the interface yourself, you can directly generate ts sdk.
-- Functions such as cache, authority, rate are not affected
-- Interface independent, easy to do performance debugging
-- Friendly to both front and back ends
+- 申明式的查询描述
+- 强类型（pydantic）
+- 提供了每层获取数据后进行处理的hook
+- 引入成本低
+- 适合作为BFF层组合数据使用
 
-pydantic-resolve disadvantages：
+pydantic-resolve 缺点：
 
-- To view the combination type, you need to view the response information through OpenAPI
-- When the front and back ends are separated, it is not convenient to have a universal interface on the back end.
-- Friend -> Friend graph expression is not friendly to define
+- 目前只支持python
+
+
+
+### 使用 GraphQL 的思路
+
+一种是根据数据的ER，构建关系型查询
+典型的比如github，jira 提供的graphql接口
+
+用户熟悉这种固定的ER，查询到规范的数据之后自己再做二次加工。换言之你哪怕有定制化的需求，也只能自己想办法处理，不可能向他们提出这种要求。
+
+另一种是面向业务，构建的是业务层的查询接口
+这种场景并不适合graphql，他对查询的数据定制化要求高，意味着通过通用接口拿到的数据往往需要根据业务做再加工，而且也会和后端商量，定制一些面向专用页面的graphql 接口。
+
+这会慢慢变成常态，导致很多不通用的查询出现. 并且很多数据并不适合暴露到前端做二次处理。
+
+久而久之, GraphQL的入口会逐渐增多, 每个入口的内容互相独立. 从形式上向 rest + 嵌套视图结构靠拢.
+
+另外, 对于一整迭代中的系统，graphql 这样一个灵活的中间层反而对垂直业务的整体清晰度造成了影响。
+
+反而利用 typescript 生成 sdk 的模式可以提供更加稳定的接口迭代体验, 后端数据类型可以直接被前端使用. 
+
+结论就是，graphql 适合稳定的，轻"具体"业务概念的数据的组合查询。而不适合面向具体业务，高度定制化的场景。

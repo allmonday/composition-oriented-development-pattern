@@ -8,6 +8,6 @@ export type Sample3StoryDetail = {
     name: string;
     owner_id: number;
     sprint_id: number;
-    tasks?: Array<Sample3TaskDetail>;
+    tasks: Array<Sample3TaskDetail>;
 };
 

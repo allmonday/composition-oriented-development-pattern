@@ -8,6 +8,6 @@ export type Sample1TeamDetail2 = {
     id: number;
     name: string;
     sprints?: Array<Sample1SprintDetail>;
-    members?: Array<User>;
+    members: Array<User>;
 };
 

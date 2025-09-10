@@ -9,7 +9,7 @@ export type Sample1StoryDetail = {
     name: string;
     owner_id: number;
     sprint_id: number;
-    tasks?: Array<Sample1TaskDetail>;
-    owner?: (User | null);
+    tasks: Array<Sample1TaskDetail>;
+    owner: (User | null);
 };
 

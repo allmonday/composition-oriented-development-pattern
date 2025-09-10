@@ -5,6 +5,6 @@
 import type { Sample5TeamDetail } from './Sample5TeamDetail';
 export type Sample5Root = {
     summary: string;
-    team?: (Sample5TeamDetail | null);
+    team: (Sample5TeamDetail | null);
 };
 

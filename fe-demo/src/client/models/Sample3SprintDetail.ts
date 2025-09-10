@@ -8,6 +8,6 @@ export type Sample3SprintDetail = {
     name: string;
     status: string;
     team_id: number;
-    stories?: Array<Sample3StoryDetail>;
+    stories: Array<Sample3StoryDetail>;
 };
 

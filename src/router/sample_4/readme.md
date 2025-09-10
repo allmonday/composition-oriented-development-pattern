@@ -1,30 +1,30 @@
-## Post hooks
+## 后处理钩子
 
-Enter sample_4
+进入 `sample_4`. 介绍如何在数据获取之后进行额外处理. 
 
-This time I want to add the task_count field to team, sprint, and story to count the total number of tasks included in each level.
+这次我想在 team, sprint, story 上面添加 task_count 字段, 来统计每一层包含的 task 总数. 
 
-This can be done using post_method . post_method will be executed synchronously after all resolve_methods of the class are executed.
+使用 `post_method` 可以做到, `post_method` 会在class 的所有 `resolve_methods` 执行完之后, 以同步的方式执行.
 
-> Yes, as a post hook, it does not support async
+> 是的, 作为post hook, 它不支持 async, 我们期望这里只进行可控的数据操作行为. (post hook 不会提供 loader)
 
 ```python
 class Sample4StoryDetail(ss.Story):
     tasks: list[Sample4TaskDetail] = []
     def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
         return loader.load(self.id)
-
+    
     task_count: int = 0
-    def post_task_count(self):
+    def post_task_count(self): # post hook
         return len(self.tasks)
-
+    
 class Sample4SprintDetail(sps.Sprint):
     stories: list[Sample4StoryDetail] = []
     def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
         return loader.load(self.id)
 
     task_count: int = 0
-    def post_task_count(self):
+    def post_task_count(self):  # post hook
         return sum([s.task_count for s in self.stories])
 
 class Sample4TeamDetail(tms.Team):
@@ -33,21 +33,23 @@ class Sample4TeamDetail(tms.Team):
         return loader.load(self.id)
 
     task_count: int = 0
-    def post_task_count(self):
+    def post_task_count(self): # post hook
         return sum([s.task_count for s in self.sprints])
 ```
 
-Starting from Story, each layer defines a task_count field, and then post_task_count will be executed after the tasks data is obtained to calculate `self.task`
+从 Story 开始, 每一层都定义了一个 `task_count` 字段, 然后 `post_task_count` 会在 `tasks` 数据获取到之后执行, 计算出 `self.task` 的长度
 
-After all post methods are executed, it means that resolve_stories in Sprint has been executed. Then post_task_count in Sprint starts to execute, and the task_count of all stories is added up.
+等所有 post 方法执行完后, 才代表 Sprint 中的 `resolve_stories` 执行完毕, 接着 Sprint 中的 `post_task_count` 开始执行, 把所有 story 的 task_count 相加.
 
-The same logic applies to Team above.
+再往上 Team 也是类似的逻辑.
 
-Finally, the task_count in each layer can be calculated.
+最后就能计算完每一层中的 task_count.
 
-By the way, in the post method, there is a special method `post_default_handler`, which will be executed after all post_method have been executed. We can do some interesting functions with it:
+顺带一提, 在 post 方法中, 有一个特殊的方法 `post_default_handler`, 它等所有的 `post_method` 执行完后再执行. 
 
-For example, we can add a description to Team to summarize how many tasks the team has. Because `default_post_handler` will be executed after resolve and post are executed, all the information (task_count) can be obtained to generate the description.
+用它我们可以做一些有趣的功能:
+
+比如我们可以为 Team 添加一个 description, 来总结 team 有多少task. 因为 `default_post_handler` 会在 resolve 和 post 执行完之后才执行, 所以就能获得所有信息 (task_count) 来生成 description.
 
 ```python
 class Sample4TeamDetail(tms.Team):
@@ -58,8 +60,37 @@ class Sample4TeamDetail(tms.Team):
     task_count: int = 0
     def post_task_count(self):
         return sum([s.task_count for s in self.sprints])
-
+    
     description: str = ''
     def post_default_handler(self):
-        self.description = f'team: {self.name} has {self.task_count} tasks in total.'
+        self.description = f'team: {self.name} has {self.task_count} tasks in total.' 
 ```
+
+利用这个功能, 我们在复用相同的数据时, 可以做很多定制化的修改.
+
+
+## 隐藏/过滤字段
+
+在上个案例中, 可能会有一种需求. 比如有一些层级的 task_count 我不想显示, 想将它在返回中屏蔽掉该怎么做?
+
+对于这种对外隐藏字段的需求, 可以使用 model_config 装饰器搭配`Field(exclude=True)`来实现.
+
+```python
+@model_config()
+class Sample4StoryDetail(ss.Story):
+    tasks: list[Sample4TaskDetail] = []
+    def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
+        return loader.load(self.id)
+    
+    task_count: int = Field(default=0, exclude=True)
+    def post_task_count(self):
+        return len(self.tasks)
+```
+
+两个改动, 一个是添加了 `model_config`装饰器, 另一个是用 `Field(exclude=True)` 来申明类型.
+
+在pydantic 中,如果exclude=True, 则会在输出中屏蔽该字段, 但是 schema 中依然能看到这个字段. 
+
+搭配了 `model_config` 就可以保证在 schema properties 中也屏蔽该字段.
+
+可以将代码中的注释移除后测试.

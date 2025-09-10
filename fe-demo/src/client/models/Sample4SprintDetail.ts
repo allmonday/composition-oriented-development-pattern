@@ -8,7 +8,7 @@ export type Sample4SprintDetail = {
     name: string;
     status: string;
     team_id: number;
-    stories?: Array<Sample4StoryDetail>;
-    task_count?: number;
+    stories: Array<Sample4StoryDetail>;
+    task_count: number;
 };
 

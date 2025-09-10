@@ -8,7 +8,7 @@ export type Sample3TaskDetail = {
     name: string;
     owner_id: number;
     story_id: number;
-    user?: (User | null);
-    full_name?: string;
+    user: (User | null);
+    full_name: string;
 };
 

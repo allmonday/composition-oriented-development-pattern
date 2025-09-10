@@ -1,5 +1,5 @@
-from typing import List, Optional
-from pydantic_resolve import LoaderDepend, ensure_subset, model_config
+from typing import Optional
+from pydantic_resolve import Loader, ensure_subset, model_config
 from pydantic import BaseModel, ConfigDict, Field
 import src.db as db
 
@@ -26,7 +26,7 @@ class Sample6TaskDetail(BaseModel):
         return 'task name: ' + self.name
 
     user: Optional[us.User] = None
-    def resolve_user(self, loader=LoaderDepend(ul.user_batch_loader)):
+    def resolve_user(self, loader=Loader(ul.user_batch_loader)):
         return loader.load(self.owner_id)
 
 @ensure_subset(ss.Story)
@@ -39,7 +39,7 @@ class Sample6StoryDetail(BaseModel):
         return 'story name: ' + self.name
 
     tasks: list[Sample6TaskDetail] = []
-    def resolve_tasks(self, loader=LoaderDepend(tl.story_to_task_loader)):
+    def resolve_tasks(self, loader=Loader(tl.story_to_task_loader)):
         return loader.load(self.id)
     
 @ensure_subset(sps.Sprint)  # pick what you want.
@@ -52,7 +52,7 @@ class Sample6SprintDetail(BaseModel):
         return 'sprint name: ' + self.name
 
     stories: list[Sample6StoryDetail] = []
-    def resolve_stories(self, loader=LoaderDepend(sl.sprint_to_story_loader)):
+    def resolve_stories(self, loader=Loader(sl.sprint_to_story_loader)):
         return loader.load(self.id)
 
 @ensure_subset(tms.Team)
@@ -65,7 +65,7 @@ class Sample6TeamDetail(BaseModel):
         return 'team name: ' + self.name
 
     sprints: list[Sample6SprintDetail] = []
-    def resolve_sprints(self, loader=LoaderDepend(spl.team_to_sprint_loader)):
+    def resolve_sprints(self, loader=Loader(spl.team_to_sprint_loader)):
         return loader.load(self.id)
     
 class Sample6Root(BaseModel):
