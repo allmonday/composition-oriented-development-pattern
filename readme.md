@@ -8,6 +8,9 @@
 
 > 使用面向组合的开发模式，写出更容易维护， 更好分析的业务逻辑。 
 
+本 repo 会通过一系列的例子, 结合 [pydantic-resolve](https://github.com/allmonday/pydantic-resolve) 和一些约定, 来介绍这套面向组合的 API 开发模式.  
+
+
 ## 示例：搭建 Mini JIRA API
 
 ```mermaid
@@ -411,10 +414,6 @@ resolve过程包含了 forward fetch, backward change 和 exclude fields 三个�
 - router 负责声明面向组合的视图 `schema`
 
 ![](./static/explain2.png)
-
-本 repo 会通过一系列的例子, 结合 `pydantic2-resolve` 和一些约定, 来介绍这么一套面向组合的 API 开发模式.
-
-- https://github.com/allmonday/pydantic2-resolve
 
 
 
