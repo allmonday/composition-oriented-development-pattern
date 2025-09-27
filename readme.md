@@ -4,7 +4,8 @@
 
 [english version](./readme-en.md)
 
-![](./map.png)
+<img width="1411" height="801" alt="image" src="https://github.com/user-attachments/assets/bf78a15a-ba40-474c-aecc-db0e4171e5bb" />
+
 
 > 使用面向组合的开发模式，写出更容易维护， 更好分析的业务逻辑。 
 
