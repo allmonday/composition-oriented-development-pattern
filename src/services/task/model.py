@@ -9,3 +9,4 @@ class Task(db.Base):
     name: Mapped[str]
     owner_id: Mapped[int]
     story_id: Mapped[int]
+    estimate: Mapped[int]

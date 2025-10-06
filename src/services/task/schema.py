@@ -5,5 +5,6 @@ class Task(BaseModel):
     name: str
     owner_id: int
     story_id: int
+    estimate: int
 
     model_config = ConfigDict(from_attributes=True)

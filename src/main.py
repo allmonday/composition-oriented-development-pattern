@@ -9,6 +9,7 @@ import src.router.sample_4.router as s4_router
 import src.router.sample_5.router as s5_router
 import src.router.sample_6.router as s6_router
 import src.router.sample_7.router as s7_router
+import src.router.demo.router as demo_router
 
 async def startup():
     print('start')
@@ -37,6 +38,7 @@ app.include_router(s4_router.route)
 app.include_router(s5_router.route)
 app.include_router(s6_router.route)
 app.include_router(s7_router.route)
+app.include_router(demo_router.route)
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:
