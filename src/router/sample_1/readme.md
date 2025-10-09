@@ -4,7 +4,7 @@
 router-viz -m src.main  --model_prefixs src.servicesls --tags sample_1 --show_fields
 ```
 
-![](./s1.png)
+<img width="1637" height="941" alt="image" src="https://github.com/user-attachments/assets/fda027fc-0956-46ca-ae36-ccad6573cd0a" />
 
 作为开始, 我们会一步步迭代, 从返回单层 task 列表逐渐过渡到返回多层 Teams 列表.
 
