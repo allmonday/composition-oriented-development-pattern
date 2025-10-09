@@ -4,7 +4,7 @@
 router-viz -m src.main  --model_prefixs src.servicesls --tags sample_4 --show_fields
 ```
 
-![](./s4.png)
+<img width="1623" height="913" alt="image" src="https://github.com/user-attachments/assets/75e67947-a0ee-40e2-961b-7c0bba6fad2e" />
 
 进入 `sample_4`. 介绍如何在数据获取之后进行额外处理. 
 
