@@ -4,7 +4,7 @@
 router-viz -m src.main  --model_prefixs src.servicesls --tags sample_5 --show_fields
 ```
 
-![](./s5.png)
+<img width="1631" height="917" alt="image" src="https://github.com/user-attachments/assets/a965adb3-6575-44e0-9cbd-2b617d368e27" />
 
 ## 面向页面提供视图数据
 
