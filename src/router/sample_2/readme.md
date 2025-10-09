@@ -4,7 +4,7 @@
 router-viz -m src.main  --model_prefixs src.servicesls --tags sample_2 --show_fields
 ```
 
-![](./s2.png)
+<img width="1627" height="864" alt="image" src="https://github.com/user-attachments/assets/584c35cd-de0e-4607-a990-1ec58a46bfa2" />
 
 进入 `sample_2`. 为 1:N 的 loader 提供额外的过滤功能.
 
