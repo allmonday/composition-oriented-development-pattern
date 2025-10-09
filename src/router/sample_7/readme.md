@@ -4,7 +4,7 @@
 router-viz -m src.main  --model_prefixs src.servicesls --tags sample_7 --show_fields
 ```
 
-![](./s7.png)
+<img width="1637" height="951" alt="image" src="https://github.com/user-attachments/assets/e40336fe-b496-4581-b2e4-055922102343" />
 
 通常情况下 loader instance 是由 Resolver 内部实例化并且维护的。
 
