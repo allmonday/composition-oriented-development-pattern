@@ -10,6 +10,7 @@ import src.router.sample_5.router as s5_router
 import src.router.sample_6.router as s6_router
 import src.router.sample_7.router as s7_router
 import src.router.demo.router as demo_router
+from fastapi_voyager import create_voyager
 
 async def startup():
     print('start')
@@ -39,6 +40,8 @@ app.include_router(s5_router.route)
 app.include_router(s6_router.route)
 app.include_router(s7_router.route)
 app.include_router(demo_router.route)
+
+app.mount('/voyager', create_voyager(app, module_color={'src.services': 'tomato'}, module_prefix='src.services'))
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:
