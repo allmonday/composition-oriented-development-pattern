@@ -41,7 +41,12 @@ app.include_router(s6_router.route)
 app.include_router(s7_router.route)
 app.include_router(demo_router.route)
 
-app.mount('/voyager', create_voyager(app, module_color={'src.services': 'tomato'}, module_prefix='src.services'))
+app.mount('/voyager', 
+          create_voyager(
+            app, 
+            module_color={'src.services': 'tomato'}, 
+            module_prefix='src.services', 
+            online_repo_url='https://github.com/allmonday/composition-oriented-development-pattern/blob/master'))
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:
