@@ -11,6 +11,10 @@ import src.router.sample_6.router as s6_router
 import src.router.sample_7.router as s7_router
 import src.router.demo.router as demo_router
 from fastapi_voyager import create_voyager
+from src.services.er_diagram import diagram
+from pydantic_resolve import config_global_resolver
+
+config_global_resolver(diagram)
 
 async def startup():
     print('start')
