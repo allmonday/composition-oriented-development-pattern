@@ -1,4 +1,4 @@
-from pydantic_resolve import config_global_resolver, ErDiagram, ErConfig, Relationship
+from pydantic_resolve import ErDiagram, ErConfig, Relationship
 from src.services.team.schema import Team
 from src.services.sprint.schema import Sprint
 from src.services.story.schema import Story
@@ -14,51 +14,27 @@ diagram = ErDiagram(
         ErConfig(
             kls=Team,
             relationships=[
-                Relationship(
-                    field='id',
-                    target_kls=list[Sprint],
-                    loader=sprint_loader.team_to_sprint_loader
-                ),
-                Relationship(
-                    field='id',
-                    target_kls=list[User],
-                    loader=user_loader.team_to_user_loader
-                )
+                Relationship( field='id', target_kls=list[Sprint], loader=sprint_loader.team_to_sprint_loader),
+                Relationship( field='id', target_kls=list[User], loader=user_loader.team_to_user_loader)
             ]
         ),
         ErConfig(
             kls=Sprint,
             relationships=[
-                Relationship(
-                    field='id',
-                    target_kls=list[Story],
-                    loader=story_loader.sprint_to_story_loader
-                )
+                Relationship( field='id', target_kls=list[Story], loader=story_loader.sprint_to_story_loader)
             ]
         ),
         ErConfig(
             kls=Story,
             relationships=[
-                Relationship(
-                    field='id',
-                    target_kls=list[Task],
-                    loader=task_loader.story_to_task_loader
-                ),
-                Relationship(
-                    field='owner_id',
-                    target_kls=User,
-                    loader=user_loader.user_batch_loader
-                )
+                Relationship( field='id', target_kls=list[Task], loader=task_loader.story_to_task_loader),
+                Relationship( field='owner_id', target_kls=User, loader=user_loader.user_batch_loader)
             ]
         ),
         ErConfig(
             kls=Task,
             relationships=[
-                Relationship(
-                    field='owner_id',
-                    target_kls=User,
-                    loader=user_loader.user_batch_loader
-                )
+                Relationship( field='owner_id', target_kls=User, loader=user_loader.user_batch_loader)
             ]
         )
     ]
