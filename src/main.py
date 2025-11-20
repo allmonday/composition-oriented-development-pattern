@@ -51,6 +51,7 @@ app.mount('/voyager',
             module_color={'src.services': 'tomato'}, 
             module_prefix='src.services', 
             swagger_url="/docs",
+            ga_id="G-R64S7Q49VL",
             initial_page_policy='first',
             online_repo_url='https://github.com/allmonday/composition-oriented-development-pattern/blob/master'))
 
