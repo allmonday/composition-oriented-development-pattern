@@ -1,13 +1,7 @@
 from __future__ import annotations
 
-from typing import Optional
-from pydantic_resolve import Loader, model_config, ICollector
-
-import src.services.task.loader as tl
-import src.services.user.loader as ul
-import src.services.story.loader as sl
-import src.services.sprint.loader as spl
-
+from typing import Optional, Annotated
+from pydantic_resolve import ICollector, LoadBy, model_config
 import src.services.story.schema as ss
 import src.services.task.schema as ts
 import src.services.user.schema as us
@@ -27,9 +21,7 @@ class CntCollector(ICollector):
 
 @model_config()
 class Sample4TeamDetail(tms.Team):
-    sprints: list[Sample4SprintDetail] = []
-    def resolve_sprints(self, loader=Loader(spl.team_to_sprint_loader)):
-        return loader.load(self.id)
+    sprints: Annotated[list[Sample4SprintDetail], LoadBy('id')] = []
 
     task_count: int = 0
     def post_task_count(self):
@@ -45,9 +37,7 @@ class Sample4TeamDetail(tms.Team):
 
 @model_config()
 class Sample4SprintDetail(sps.Sprint):
-    stories: list[Sample4StoryDetail] = []
-    def resolve_stories(self, loader=Loader(sl.sprint_to_story_loader)):
-        return loader.load(self.id)
+    stories: Annotated[list[Sample4StoryDetail], LoadBy('id')] = []
 
     task_count: int = 0
     # task_count: int = Field(default=0, exclude=True)
@@ -58,9 +48,7 @@ class Sample4SprintDetail(sps.Sprint):
 class Sample4StoryDetail(ss.Story):
     __pydantic_resolve_collect__ = {'tasks': 'story_tasks'}
 
-    tasks: list[Sample4TaskDetail] = []
-    def resolve_tasks(self, loader=Loader(tl.story_to_task_loader)):
-        return loader.load(self.id)
+    tasks: Annotated[list[Sample4TaskDetail], LoadBy('id')] = []
     
     task_count: int = 0
     # task_count: int = Field(default=0, exclude=True)
@@ -69,6 +57,4 @@ class Sample4StoryDetail(ss.Story):
 
 @model_config()
 class Sample4TaskDetail(ts.Task):
-    user: Optional[us.User] = None
-    def resolve_user(self, loader=Loader(ul.user_batch_loader)):
-        return loader.load(self.owner_id)
+    user: Annotated[Optional[us.User], LoadBy('owner_id')] = None

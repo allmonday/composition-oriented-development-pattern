@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional, Annotated
-from pydantic_resolve import Loader, model_config, LoadBy
+from pydantic_resolve import model_config, LoadBy
 
 import src.services.story.schema as ss
 import src.services.task.schema as ts
