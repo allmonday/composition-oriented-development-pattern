@@ -48,7 +48,7 @@ app.include_router(demo_router.route)
 app.mount('/voyager', 
           create_voyager(
             app, 
-            module_color={'src.services': 'tomato'}, 
+            module_color={'src.services': 'purple'}, 
             module_prefix='src.services', 
             swagger_url="/docs",
             ga_id="G-R64S7Q49VL",
