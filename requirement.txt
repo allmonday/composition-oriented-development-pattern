@@ -3,11 +3,11 @@ aiosqlite==0.21.0
 click==8.1.7
 fastapi==0.116.1
 pydantic==2.11.7
-pydantic-resolve==2.1.0
+pydantic-resolve==2.2.3
 python-dotenv==1.0.0
 SQLAlchemy==2.0.43
 uvicorn==0.35.0
 pytest==8.4.2
 greenlet==3.2.4
-fastapi-voyager==0.12.12
+fastapi-voyager==0.13.0
 pytest-asyncio==0.23.3
