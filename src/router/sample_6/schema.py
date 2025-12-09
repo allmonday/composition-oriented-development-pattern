@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic_resolve import Loader, ensure_subset, model_config
+from pydantic_resolve import Loader, model_config, DefineSubset
 from pydantic import BaseModel, ConfigDict, Field
 import src.db as db
 
@@ -16,12 +16,11 @@ import src.services.team.schema as tms
 
 import src.services.team.query as tmq
 
-@ensure_subset(ts.Task)
-@model_config()
-class Sample6TaskDetail(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class Sample6TaskDetail(DefineSubset):
+    __pydantic_resolve_subset__ = (ts.Task, ('name', ))
+
     owner_id: int = Field(exclude=True)
-    name: str
+
     def post_name(self):
         return 'task name: ' + self.name
 
@@ -29,12 +28,12 @@ class Sample6TaskDetail(BaseModel):
     def resolve_user(self, loader=Loader(ul.user_batch_loader)):
         return loader.load(self.owner_id)
 
-@ensure_subset(ss.Story)
-@model_config()
-class Sample6StoryDetail(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+
+class Sample6StoryDetail(DefineSubset):
+    __pydantic_resolve_subset__ = (ss.Story, ('name', ))
+
     id: int = Field(exclude=True)
-    name: str
+
     def post_name(self):
         return 'story name: ' + self.name
 
@@ -42,12 +41,11 @@ class Sample6StoryDetail(BaseModel):
     def resolve_tasks(self, loader=Loader(tl.story_to_task_loader)):
         return loader.load(self.id)
     
-@ensure_subset(sps.Sprint)  # pick what you want.
-@model_config()
-class Sample6SprintDetail(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class Sample6SprintDetail(DefineSubset):
+    __pydantic_resolve_subset__ = (sps.Sprint, ('name', ))
+
     id: int = Field(exclude=True)
-    name: str
+
     def post_name(self):
         return 'sprint name: ' + self.name
 
@@ -55,12 +53,11 @@ class Sample6SprintDetail(BaseModel):
     def resolve_stories(self, loader=Loader(sl.sprint_to_story_loader)):
         return loader.load(self.id)
 
-@ensure_subset(tms.Team)
-@model_config()
-class Sample6TeamDetail(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int = Field(exclude=True)
-    name: str
+class Sample6TeamDetail(DefineSubset):
+    __pydantic_resolve_subset__ = (tms.Team, ('name',))
+
+    id: int = Field(exclude=True)  # skip in 
+
     def post_name(self):
         return 'team name: ' + self.name
 
