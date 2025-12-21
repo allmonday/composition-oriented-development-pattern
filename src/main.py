@@ -56,7 +56,8 @@ app.mount('/voyager',
             swagger_url="/docs",
             ga_id="G-R64S7Q49VL",
             initial_page_policy='first',
-            online_repo_url='https://github.com/allmonday/composition-oriented-development-pattern/blob/master'))
+            online_repo_url='https://github.com/allmonday/composition-oriented-development-pattern/blob/master',
+            enable_pydantic_resolve_meta=True))
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:

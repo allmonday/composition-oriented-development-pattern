@@ -1,5 +1,5 @@
 from typing import Optional, Annotated
-from pydantic_resolve import Collector, DefineSubset, LoadBy
+from pydantic_resolve import Collector, DefineSubset, LoadBy, SendTo
 from src.services.story.schema import Story as BaseStory
 
 from src.services.task.schema import Task as BaseTask
@@ -9,12 +9,13 @@ from src.services.user.schema import User as BaseUser
 
 # post case 1
 class Task1(BaseTask):
-    __pydantic_resolve_collect__ = {'user': 'related_users'}  # Propagate user to collector: 'related_users'
+    # Optimized by SendTo
+    # __pydantic_resolve_collect__ = {'user': 'related_users'}  # Propagate user to collector: 'related_users'
 
-    user: Annotated[Optional[BaseUser], LoadBy('owner_id')] = None
+    user: Annotated[Optional[BaseUser], LoadBy('owner_id'), SendTo('related_users')] = None
 
 class Story1(DefineSubset):
-    __pydantic_resolve_subset__ = (BaseStory, ('id', 'name', 'owner_id'))
+    __subset__ = (BaseStory, ('id', 'name', 'owner_id'))
 
     tasks: Annotated[list[Task1], LoadBy('id')] = []
     assignee: Annotated[Optional[BaseUser], LoadBy('owner_id')] = None
