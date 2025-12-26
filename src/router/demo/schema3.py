@@ -1,5 +1,5 @@
 from typing import Optional, Annotated
-from pydantic_resolve import DefineSubset, LoadBy, ExposeAs
+from pydantic_resolve import DefineSubset, LoadBy, SubsetConfig
 from src.services.story.schema import Story as BaseStory
 
 from src.services.task.schema import Task as BaseTask
@@ -15,8 +15,9 @@ class Task3(BaseTask):
         return f'{ancestor_context["story_name"]} - {self.name}'
 
 class Story3(DefineSubset):
-    __subset__ = (BaseStory, ('id', 'name', 'owner_id'))
-    __pydantic_resolve_expose__ = {'name': 'story_name'}
+    __subset__ = SubsetConfig(
+        kls=BaseStory, fields=['id', 'name', 'owner_id'], expose_as=[('name', 'story_name')]
+    )
 
     tasks: Annotated[list[Task3], LoadBy('id')] = []
     assignee: Annotated[Optional[BaseUser], LoadBy('owner_id')] = None
