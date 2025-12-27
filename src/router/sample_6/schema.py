@@ -1,6 +1,6 @@
 from typing import Optional
-from pydantic_resolve import Loader, model_config, DefineSubset
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic_resolve import Loader, DefineSubset, SubsetConfig
+from pydantic import BaseModel,  Field
 import src.db as db
 
 import src.services.task.loader as tl
@@ -17,9 +17,10 @@ import src.services.team.schema as tms
 import src.services.team.query as tmq
 
 class Sample6TaskDetail(DefineSubset):
-    __pydantic_resolve_subset__ = (ts.Task, ('name', ))
-
-    owner_id: int = Field(exclude=True)
+    __subset__ = SubsetConfig(
+        kls=ts.Task,
+        fields=['name', 'owner_id'],
+        excluded_fields=['owner_id'])
 
     def post_name(self):
         return 'task name: ' + self.name
@@ -30,9 +31,11 @@ class Sample6TaskDetail(DefineSubset):
 
 
 class Sample6StoryDetail(DefineSubset):
-    __pydantic_resolve_subset__ = (ss.Story, ('name', ))
-
-    id: int = Field(exclude=True)
+    __subset__ = SubsetConfig(
+        kls=ss.Story, 
+        fields=['name', 'id'],
+        excluded_fields=['id']
+    )
 
     def post_name(self):
         return 'story name: ' + self.name
@@ -42,9 +45,10 @@ class Sample6StoryDetail(DefineSubset):
         return loader.load(self.id)
     
 class Sample6SprintDetail(DefineSubset):
-    __pydantic_resolve_subset__ = (sps.Sprint, ('name', ))
-
-    id: int = Field(exclude=True)
+    __subset__ = SubsetConfig(
+        kls=sps.Sprint,
+        fields=('name', 'id'),
+        excluded_fields=['id'])
 
     def post_name(self):
         return 'sprint name: ' + self.name
@@ -54,9 +58,10 @@ class Sample6SprintDetail(DefineSubset):
         return loader.load(self.id)
 
 class Sample6TeamDetail(DefineSubset):
-    __pydantic_resolve_subset__ = (tms.Team, ('name',))
-
-    id: int = Field(exclude=True)  # skip in 
+    __subset__ = SubsetConfig(
+        kls=tms.Team, 
+        fields=['id', 'name'],
+        excluded_fields=['id'])
 
     def post_name(self):
         return 'team name: ' + self.name
