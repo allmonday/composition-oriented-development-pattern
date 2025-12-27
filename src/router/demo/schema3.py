@@ -16,7 +16,9 @@ class Task3(BaseTask):
 
 class Story3(DefineSubset):
     __subset__ = SubsetConfig(
-        kls=BaseStory, fields=['id', 'name', 'owner_id'], expose_as=[('name', 'story_name')]
+        kls=BaseStory,
+        fields=['id', 'name', 'owner_id'],
+        expose_as=[('name', 'story_name')]
     )
 
     tasks: Annotated[list[Task3], LoadBy('id')] = []
