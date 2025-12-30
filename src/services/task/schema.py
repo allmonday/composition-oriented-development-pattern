@@ -8,6 +8,7 @@ class Task(BaseModel, BaseEntity):
     __pydantic_resolve_relationships__ = [
         Relationship( field='owner_id', target_kls=user_schema.User, loader=user_loader.user_batch_loader)
     ]
+    
     id: int
     name: str
     owner_id: int

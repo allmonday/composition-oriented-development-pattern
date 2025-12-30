@@ -15,8 +15,10 @@ from .schema3 import Story3
 route = APIRouter(tags=['demo'], prefix="/demo")
 
 @route.get('/stories', response_model=List[Story])
-async def get_stories_with_detail(session: AsyncSession = Depends(db.get_session)):
-    stories = await sq.get_stories(session)
+async def get_stories_with_detail():
+    async with db.async_session() as session:
+        stories = await sq.get_stories(session)
+
     stories = [Story.model_validate(t) for t in stories]
     stories = await Resolver().resolve(stories)
     return stories
